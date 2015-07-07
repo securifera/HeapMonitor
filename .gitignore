@@ -41,3 +41,17 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.exe
+*.pdb
+*.tlog
+*.log
+*.obj
+*.idb
+*.lastbuildstate
+*.pch
+heap_inject_dll/heap_injector/Debug/heap_injector.exe.intermediate.manifest
+*.manifest
+heap_inject_dll/heap_inject_dll/Debug/heap_inject.dll.embed.manifest.res
+*.unsuccessfulbuild
+*.rc
+*.ipch
