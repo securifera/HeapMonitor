@@ -6,9 +6,11 @@
 
 package heapmonitor;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -24,6 +26,9 @@ public class SocketHandler implements Runnable {
     private final Socket theClientSocket;
     private final MainFrame theParentFrame;
     
+    public static final byte ALLOCATE = 0x12;
+    public static final byte FREE = 0x13;
+    
     //=================================================================
     /**
      * 
@@ -37,37 +42,105 @@ public class SocketHandler implements Runnable {
     
     //=================================================================
     /**
-     * Main loop
+     * Main receive loop
+     * 
+     * Protocol format
+     * 
+     * Allocation
+     * [ 1 byte - message type ][ 4 byte - allocation size ][ 8 bytes - address ]
+     * [ 4 bytes - trace size ][ (trace_size bytes) trace string array ]
+     * 
+     * Free
+     * [ 1 byte - message type ][ 8 bytes - address ]
+     * [ 4 bytes - trace size ][ (trace_size bytes) trace string array ]
+     * 
+     * 
+     * 
      */
     @Override
     public void run() {
         
         try {
+            //Create the handler and start it
+            MemoryTupleHandler aHandler = new MemoryTupleHandler(theParentFrame);
+            aHandler.start();
             
             theClientSocket.setSoTimeout(1000);
-            InputStream dataFromServer = theClientSocket.getInputStream();
+            DataInputStream dataStream = new DataInputStream( theClientSocket.getInputStream() );
+            byte[] sizeArr = new byte[4];
+            byte[] addrArr = new byte[8];
+            byte[] traceLen = new byte[4];
             
-            int bytesRead = 0;
-            byte[] byteArr = new byte[1000];
             while(true){
                 
+                MemoryTuple aTuple = null;
                 try{
-                    //Read bytes from socket
-                    bytesRead = dataFromServer.read(byteArr);
-                    if( bytesRead > 0 ){
-                         ByteBuffer aBB = ByteBuffer.wrap(byteArr).order(ByteOrder.LITTLE_ENDIAN);
-                         MessageHandler aHandler = new MessageHandler(theParentFrame, aBB);
-                         MainFrame.Executor.execute(aHandler);
+                    
+                    //Get message type
+                    byte messageType = (byte)dataStream.read();
+                    
+                    switch( messageType){
+                        case ALLOCATE:
+
+                            //Get allocation size
+                            dataStream.readFully(sizeArr);
+                            int size = ByteBuffer.wrap(sizeArr).order(ByteOrder.LITTLE_ENDIAN).getInt();
+
+                            //Get address
+                            dataStream.readFully(addrArr);
+                            long address = ByteBuffer.wrap(addrArr).order(ByteOrder.LITTLE_ENDIAN).getLong();
+                          
+                            //Get trace len
+                            dataStream.readFully(traceLen);
+                            int trace_len = ByteBuffer.wrap(traceLen).order(ByteOrder.LITTLE_ENDIAN).getInt();
+                                                      
+                            //Get trace data
+                            byte[] traceByteArr = new byte[trace_len];
+                            dataStream.readFully(traceByteArr);
+                            
+                            //Create tuple
+                            aTuple = new AllocationTuple(address, traceByteArr, size);
+
+                            break;
+                        case FREE:
+
+                            //Get address
+                            dataStream.readFully(addrArr);
+                            address = ByteBuffer.wrap(addrArr).order(ByteOrder.LITTLE_ENDIAN).getLong();
+                          
+                            //Get trace len
+                            dataStream.readFully(traceLen);
+                            trace_len = ByteBuffer.wrap(traceLen).order(ByteOrder.LITTLE_ENDIAN).getInt();
+                            
+                            //Get trace data
+                            traceByteArr = new byte[trace_len];
+                            dataStream.readFully(traceByteArr);
+
+                            //Create tuple
+                            aTuple = new FreeTuple( address, traceByteArr );
+
+                            break;
+                        default:
+                            System.err.println("Unknown message type detected.");
+                            break;
                     }
+                    
+                    //Add to queue to be processed
+                    if( aTuple != null )                        
+                        aHandler.processIncoming(aTuple);
+                    
                     
                 } catch(SocketTimeoutException ex){
                 }
             }
-            
+        } catch (SocketException ex) {  
+            if( !ex.getMessage().contains("Connection reset"))
+                Logger.getLogger(SocketHandler.class.getName()).log(Level.SEVERE, null, ex);
+            theParentFrame.setSocketHandler(null);
         } catch (IOException ex) {
             Logger.getLogger(SocketHandler.class.getName()).log(Level.SEVERE, null, ex);
             theParentFrame.setSocketHandler(null);
-        }
+        } 
     }
     
 }

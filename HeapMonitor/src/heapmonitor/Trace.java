@@ -11,7 +11,7 @@ package heapmonitor;
  */
 public class Trace {
 
-    private final int address;
+    private final long address;
     private final String name;       
 
     //=============================================================
@@ -20,7 +20,7 @@ public class Trace {
      * @param passedAddress
      * @param passedName
      */
-    public Trace( int passedAddress, String passedName ){
+    public Trace( long passedAddress, String passedName ){
         address = passedAddress;
         name = passedName;            
     }
