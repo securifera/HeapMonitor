@@ -73,12 +73,12 @@ public class SocketHandler implements Runnable {
             
             while(true){
                 
-                MemoryTuple aTuple = null;
+                Trace aTrace = null;
                 try{
                     
                     //Get message type
                     byte messageType = (byte)dataStream.read();
-                    
+                    long address = 0;
                     switch( messageType){
                         case ALLOCATE:
 
@@ -88,7 +88,7 @@ public class SocketHandler implements Runnable {
 
                             //Get address
                             dataStream.readFully(addrArr);
-                            long address = ByteBuffer.wrap(addrArr).order(ByteOrder.LITTLE_ENDIAN).getLong();
+                            address = ByteBuffer.wrap(addrArr).order(ByteOrder.LITTLE_ENDIAN).getLong();
                           
                             //Get trace len
                             dataStream.readFully(traceLen);
@@ -99,7 +99,7 @@ public class SocketHandler implements Runnable {
                             dataStream.readFully(traceByteArr);
                             
                             //Create tuple
-                            aTuple = new AllocationTuple(address, traceByteArr, size);
+                            aTrace = new AllocationTrace( traceByteArr, size);
 
                             break;
                         case FREE:
@@ -117,7 +117,7 @@ public class SocketHandler implements Runnable {
                             dataStream.readFully(traceByteArr);
 
                             //Create tuple
-                            aTuple = new FreeTuple( address, traceByteArr );
+                            aTrace = new Trace( traceByteArr );
 
                             break;
                         default:
@@ -126,8 +126,8 @@ public class SocketHandler implements Runnable {
                     }
                     
                     //Add to queue to be processed
-                    if( aTuple != null )                        
-                        aHandler.processIncoming(aTuple);
+                    if( address != 0 && aTrace != null )                        
+                        aHandler.processIncoming(address, aTrace);
                     
                     
                 } catch(SocketTimeoutException ex){

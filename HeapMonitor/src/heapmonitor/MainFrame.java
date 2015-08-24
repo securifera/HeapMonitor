@@ -6,29 +6,18 @@
 
 package heapmonitor;
 
-import java.awt.Component;
 import java.awt.Font;
-import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.Socket;
-import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
-import javax.swing.JLabel;
-import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 
 /**
  *
@@ -38,23 +27,25 @@ public class MainFrame extends javax.swing.JFrame {
 
     private SocketHandler theSocketHandler = null;
     public static ExecutorService Executor;
-    private final SimpleDateFormat format;
+    private TraceJPanel theTraceJPanel;
+    private MemoryJPanel theMemoryJPanel;
+    private AllocationJPanel theAllocationJPanel;
+    private FreeJPanel theFreeJPanel;
     
-    private final TreeMap<Long, AllocationTuple> memoryTreeMap = new TreeMap();
-    private final HashMap<Long, Trace> addressTraceMap = new HashMap<>();
+    
+//    private final TreeMap<Long, MemoryChunk> memoryTreeMap = new TreeMap();
+//    private final HashMap<Long, Trace> addressTraceMap = new HashMap<>();
     
     //private static final int MAX_WIDTH = 790;
-    private static final int MAX_ROW_LENGTH = 0x80;
-    private JTable memTable;
+//    private static final int MAX_ROW_LENGTH = 0x80;
+//    private JTable memTable;
     
     /**
      * Creates new form MainFrame
      */
     public MainFrame() {
         initComponents();
-        initializeComponents();
-        format = new SimpleDateFormat("MM/dd/yyyy-hh:mm:ss ");
-               
+        initializeComponents();                  
     }
 
     /**
@@ -75,37 +66,15 @@ public class MainFrame extends javax.swing.JFrame {
         addrTextField = new javax.swing.JTextField();
         jLabel5 = new javax.swing.JLabel();
         goButton = new javax.swing.JButton();
-        bucketPanel = new javax.swing.JPanel();
-        memoryTableScrollPane = new javax.swing.JScrollPane();
-        memoryPanel = new javax.swing.JPanel();
-        jLabel4 = new javax.swing.JLabel();
-        jLabel6 = new javax.swing.JLabel();
-        jLabel7 = new javax.swing.JLabel();
-        jLabel8 = new javax.swing.JLabel();
-        jLabel9 = new javax.swing.JLabel();
-        jLabel10 = new javax.swing.JLabel();
-        jLabel11 = new javax.swing.JLabel();
-        jLabel12 = new javax.swing.JLabel();
-        jLabel13 = new javax.swing.JLabel();
-        jSeparator2 = new javax.swing.JSeparator();
-        jLabel14 = new javax.swing.JLabel();
-        jLabel15 = new javax.swing.JLabel();
-        jLabel16 = new javax.swing.JLabel();
-        jLabel17 = new javax.swing.JLabel();
-        jLabel18 = new javax.swing.JLabel();
-        jLabel19 = new javax.swing.JLabel();
-        jLabel20 = new javax.swing.JLabel();
-        jLabel21 = new javax.swing.JLabel();
-        allocationScrollPane = new javax.swing.JScrollPane();
-        traceScrollPane = new javax.swing.JScrollPane();
-        traceTextArea = new javax.swing.JTextArea();
+        mainTabPane = new javax.swing.JTabbedPane();
+        allocTabPane = new javax.swing.JTabbedPane();
         menuBar = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         exitButton = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setPreferredSize(new java.awt.Dimension(990, 800));
+        setPreferredSize(new java.awt.Dimension(1015, 780));
 
         connectPanel.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
 
@@ -186,115 +155,6 @@ public class MainFrame extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        bucketPanel.setPreferredSize(new java.awt.Dimension(770, 398));
-
-        memoryTableScrollPane.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-
-        javax.swing.GroupLayout bucketPanelLayout = new javax.swing.GroupLayout(bucketPanel);
-        bucketPanel.setLayout(bucketPanelLayout);
-        bucketPanelLayout.setHorizontalGroup(
-            bucketPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(bucketPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(memoryTableScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 755, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(5, 5, 5))
-        );
-        bucketPanelLayout.setVerticalGroup(
-            bucketPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(bucketPanelLayout.createSequentialGroup()
-                .addComponent(memoryTableScrollPane)
-                .addGap(2, 2, 2))
-        );
-
-        javax.swing.GroupLayout memoryPanelLayout = new javax.swing.GroupLayout(memoryPanel);
-        memoryPanel.setLayout(memoryPanelLayout);
-        memoryPanelLayout.setHorizontalGroup(
-            memoryPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-        memoryPanelLayout.setVerticalGroup(
-            memoryPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 33, Short.MAX_VALUE)
-        );
-
-        jLabel4.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel4.setText("Address");
-
-        jLabel6.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel6.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel6.setText("0x8");
-
-        jLabel7.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel7.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel7.setText("0x10");
-
-        jLabel8.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel8.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel8.setText("0x18");
-
-        jLabel9.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel9.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel9.setText("0x20");
-
-        jLabel10.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel10.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel10.setText("0x28");
-
-        jLabel11.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel11.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel11.setText("0x30");
-
-        jLabel12.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel12.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel12.setText("0x38");
-
-        jLabel13.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel13.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        jLabel13.setText("0x80");
-
-        jLabel14.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel14.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel14.setText("0x78");
-
-        jLabel15.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel15.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel15.setText("0x70");
-
-        jLabel16.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel16.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel16.setText("0x68");
-
-        jLabel17.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel17.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel17.setText("0x50");
-
-        jLabel18.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel18.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel18.setText("0x48");
-
-        jLabel19.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel19.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel19.setText("0x40");
-
-        jLabel20.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel20.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel20.setText("0x58");
-
-        jLabel21.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
-        jLabel21.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel21.setText("0x60");
-
-        allocationScrollPane.setBorder(javax.swing.BorderFactory.createTitledBorder("Allocations"));
-        allocationScrollPane.setPreferredSize(new java.awt.Dimension(45, 165));
-
-        allocationScrollPane.setViewportView(allocationJList);
-
-        traceScrollPane.setBorder(javax.swing.BorderFactory.createTitledBorder("Stack Trace"));
-
-        traceTextArea.setColumns(20);
-        traceTextArea.setRows(5);
-        traceScrollPane.setViewportView(traceTextArea);
-
         fileMenu.setText("File");
 
         exitButton.setText("Exit");
@@ -317,91 +177,21 @@ public class MainFrame extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(connectPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(memoryPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(jSeparator2, javax.swing.GroupLayout.Alignment.TRAILING)
             .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(15, 15, 15)
-                        .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(40, 40, 40)
-                        .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel12, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel19, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel18, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel17, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel20, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel21, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel16, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel14, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel13, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(bucketPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(traceScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 756, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(allocationScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 143, Short.MAX_VALUE)
-                .addContainerGap())
+                .addContainerGap()
+                .addComponent(mainTabPane, javax.swing.GroupLayout.PREFERRED_SIZE, 785, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(allocTabPane, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(connectPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
-                .addComponent(memoryPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
-                .addComponent(jSeparator2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel16, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel14, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel13, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel20, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel21, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel12, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel19, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel18, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel17, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(bucketPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 446, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(traceScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 127, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(allocationScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 595, Short.MAX_VALUE)))
+                .addGap(10, 10, 10)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(mainTabPane, javax.swing.GroupLayout.DEFAULT_SIZE, 630, Short.MAX_VALUE)
+                    .addComponent(allocTabPane))
                 .addContainerGap())
         );
 
@@ -431,12 +221,12 @@ public class MainFrame extends javax.swing.JFrame {
         int theAddr;
         try {
             theAddr = Integer.parseInt(theAddressStr, radix);
-            loadMemoryPage(theAddr);
+            theMemoryJPanel.loadMemoryPage(theAddr);
         } catch( NumberFormatException ex ){
             try {
                 radix = 16;
                 theAddr = Integer.parseInt(theAddressStr, radix);
-                loadMemoryPage(theAddr);
+                theMemoryJPanel.loadMemoryPage(theAddr);
             } catch( NumberFormatException ex1 ){
             }
         }
@@ -468,9 +258,7 @@ public class MainFrame extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField addrTextField;
-    private final javax.swing.JList allocationJList = new javax.swing.JList();
-    private javax.swing.JScrollPane allocationScrollPane;
-    private javax.swing.JPanel bucketPanel;
+    private javax.swing.JTabbedPane allocTabPane;
     private javax.swing.JButton connectButton;
     private javax.swing.JPanel connectPanel;
     private javax.swing.JMenuItem exitButton;
@@ -478,33 +266,12 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JButton goButton;
     private javax.swing.JTextField ipAddressField;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel12;
-    private javax.swing.JLabel jLabel13;
-    private javax.swing.JLabel jLabel14;
-    private javax.swing.JLabel jLabel15;
-    private javax.swing.JLabel jLabel16;
-    private javax.swing.JLabel jLabel17;
-    private javax.swing.JLabel jLabel18;
-    private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel20;
-    private javax.swing.JLabel jLabel21;
-    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
     private javax.swing.JMenu jMenu2;
-    private javax.swing.JSeparator jSeparator2;
-    private javax.swing.JPanel memoryPanel;
-    private javax.swing.JScrollPane memoryTableScrollPane;
+    private javax.swing.JTabbedPane mainTabPane;
     private javax.swing.JMenuBar menuBar;
     private javax.swing.JTextField portField;
-    private javax.swing.JScrollPane traceScrollPane;
-    private javax.swing.JTextArea traceTextArea;
     // End of variables declaration//GEN-END:variables
 
     //=======================================================================
@@ -546,234 +313,114 @@ public class MainFrame extends javax.swing.JFrame {
      */
     private void initializeComponents() {
         
-        DefaultListModel listModel = new DefaultListModel();
-        allocationJList.setModel(listModel);
-        allocationJList.setFont( new Font(Font.MONOSPACED, Font.PLAIN, 12 ));
+        //Create the main panels
+        theTraceJPanel = new TraceJPanel( this );
+        theMemoryJPanel = new MemoryJPanel( this );
         
-        allocationJList.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent evt) {
-                if (evt.getClickCount() == 1) {
-                    
-                    AllocationTuple aTuple = (AllocationTuple)allocationJList.getSelectedValue();
-                    if( aTuple != null ){
-                        traceTextArea.setText( new String( aTuple.traceByteArr ));
-                        traceTextArea.setCaretPosition(0);
-                    }
-                    
-                } else if (evt.getClickCount() == 2) {
-                    AllocationTuple aTuple = (AllocationTuple)allocationJList.getSelectedValue();
-                    if( aTuple != null )
-                        loadMemoryPage( aTuple.getMemoryAddress() );
-                    
-                } 
-            }
-        });
+        //Add tabs to tabbed pane
+        mainTabPane.addTab("Memory", theMemoryJPanel);
+        mainTabPane.addTab("Call Trace", theTraceJPanel);
+        mainTabPane.setSelectedIndex(0);        
         
+        //Create the allocation panels
+        theAllocationJPanel = new AllocationJPanel( this );  
+        theFreeJPanel = new FreeJPanel( this ); 
+        
+        //Add tabs to tabbed pane
+        allocTabPane.addTab("Allocations", theAllocationJPanel);
+        allocTabPane.addTab("Frees", theFreeJPanel);
+        allocTabPane.setSelectedIndex(0); 
         
         //Create thread pool
         Executor = Executors.newCachedThreadPool();
-        
-        //Create JTable        
-        memTable = new JTable();
-        memTable.setShowVerticalLines(true);
-        memTable.setTableHeader(null);
-        memTable.setFont( new Font(Font.MONOSPACED, Font.PLAIN, 12));
-       
-        //Create DefaultTableModel
-        DefaultTableModel aModel = new DefaultTableModel(0,2);
-        memTable.setModel(aModel);
-   
-        //Get ColumnModel, set width and renderer
-        TableColumnModel columnModel = memTable.getColumnModel();
-        TableColumn aColumn = columnModel.getColumn(1);
-        aColumn.setPreferredWidth(638);
-        aColumn.setCellRenderer( new DefaultTableCellRenderer(){
-        
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                          boolean isSelected, boolean hasFocus, int row, int column) {  
-                if( value instanceof MemoryChunkLabel){
-                    return (Component)value;
-                } 
-                return this;
-            }
-        
-        });
-        
-        aColumn = columnModel.getColumn(0);
-        aColumn.setCellRenderer( new DefaultTableCellRenderer(){
-        
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                          boolean isSelected, boolean hasFocus, int row, int column) {                
-                
-                //TODO come back and chage this to longs
-                JLabel thisLabel = (JLabel)super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                Long aLong = (Long) value;
-                thisLabel.setText( String.format("0x%08X", aLong.intValue()));
-                return this;
-            }
-        
-        });
-           
-        //Set the view
-        memoryTableScrollPane.setViewportView(memTable);
-        
-//        //Make the frame only vertically resizble
-//        addComponentListener( new ComponentAdapter(){
-//            @Override
-//            public void componentResized( ComponentEvent e){
-//                setSize( new Dimension(  MAX_WIDTH, getHeight()));
-//                super.componentResized(e);
-//            }
-//        });
-                
+                 
     }
-    
-    //=======================================================================
+
+    //===================================================================
     /**
      * 
-     * @param passedAddress 
-     */ 
-    public void loadMemoryPage( final long passedAddress ){
-        
-        SwingUtilities.invokeLater( new Runnable(){
-
-            @Override
-            public void run() {
-                
-                //Get the model and add row
-                DefaultTableModel theModel = (DefaultTableModel)memTable.getModel();
-                long baseaddr = (passedAddress >> 16) << 16;
-                
-                //Get the row count
-                if( theModel.getRowCount() > 0 ){
-                    
-                    //Check current base against one for passed value
-                    Long addr = (Long)theModel.getValueAt(0, 0);
-                    if( addr != baseaddr ){
-                        theModel.setRowCount(0);
-
-                        long startAddr = baseaddr;
-                        for( int i=0; i< 0x200; i++){
-                            theModel.addRow(new Object[]{ startAddr, new MemoryChunkLabel(theModel, memoryTreeMap, startAddr, startAddr + MAX_ROW_LENGTH)  });
-                            startAddr += 0x80;
-                        }
-                    }
-                    
-                } else {
-                    
-                    //Add addresses for first time
-                    long startAddr = baseaddr;
-                    for( int i=0; i< 0x200; i++){
-                        theModel.addRow(new Object[]{ startAddr, new MemoryChunkLabel(theModel, memoryTreeMap, startAddr, startAddr + MAX_ROW_LENGTH)  });
-                        startAddr += 0x80;
-                    }
-                    
-                }
-          
-                //Get the difference 
-                if( passedAddress != baseaddr ){
-                    long diff = passedAddress - baseaddr;
-                    int row = (int) Math.floor(diff/MAX_ROW_LENGTH);
-                    
-                    //Scroll to address
-                    memTable.setRowSelectionInterval(row, row);
-                    Rectangle aRect = memTable.getCellRect(row, 0, true);
-                    memTable.scrollRectToVisible(aRect);
-                }
-                
-            }
-            
-        });
-    }
-
-    //=======================================================================
-    /**
-     *
-     * @param passedLong
+     * @param value
+     * @param length
      * @return 
      */
-    public Trace getTrace( long passedLong ) {
-        Trace aTrace;
-        synchronized(addressTraceMap){
-            aTrace = addressTraceMap.get(passedLong);
+    public static String formatString(String value, int length){
+        
+        String retVal;
+        if (value.length() > length){
+            retVal = value.substring(0, length - 3);
+            retVal += "...";
+        } else {
+            retVal = value;
+            retVal += String.format( "%" + (length - retVal.length()) + "s", "");
         }
-        return aTrace;
-    }
 
-    //=======================================================================
-    /**
-     * 
-     * @param stackAddress
-     * @param aTrace 
-     */
-    public void setTrace(long stackAddress, Trace aTrace) {
-        synchronized(addressTraceMap){
-            addressTraceMap.put(stackAddress, aTrace);
-        }
+        return retVal;
     }
-
+   
     //=======================================================================
     /**
      *
      * @param passedAddress
-     * @param aTuple 
+     * @param passedTrace 
      */
-    public void addAllocation(long passedAddress, final AllocationTuple aTuple) {
-               
-        synchronized( memoryTreeMap){
-            memoryTreeMap.put(passedAddress, aTuple);
+    public void addTrace(long passedAddress, Trace passedTrace) {
+                       
+        //Get the memory chunk if it exists
+        MemoryChunk aChunk = theMemoryJPanel.getMemoryChunk( passedAddress );
+        if( aChunk == null ){
+            aChunk = new MemoryChunk(passedAddress);
+            theMemoryJPanel.setMemoryChunk(passedAddress, aChunk);
+
+//            final MemoryChunk finalChunk = aChunk;
+//            SwingUtilities.invokeLater( new Runnable(){
+//
+//                @Override
+//                public void run() {
+//                    DefaultListModel listModel = (DefaultListModel) allocationJList.getModel();
+//                    listModel.addElement(finalChunk);
+//                }
+//            });
         }
         
-        //Add to the list        
-        SwingUtilities.invokeLater( new Runnable(){
+             
+        //Add to the chunk
+        final MemoryChunk finalChunk = aChunk;
+        if( passedTrace instanceof AllocationTrace ){  
+            
+            AllocationTrace anAllocTrace = (AllocationTrace)passedTrace;
+            finalChunk.addAllocation(anAllocTrace);
+            
+            //Add the allocation
+            SwingUtilities.invokeLater( new Runnable(){
 
-            @Override
-            public void run() {
-                DefaultListModel listModel = (DefaultListModel) allocationJList.getModel();
-                listModel.addElement(aTuple);
-            }
-        });
-        
-        //Get the model and add row
-        DefaultTableModel theModel = (DefaultTableModel)memTable.getModel();
-     
-        //Load initial page
-        if( theModel.getRowCount() == 0 )
-            loadMemoryPage(passedAddress);
-        
-        
-        refreshIfNeeded(passedAddress);
-    }
+                @Override
+                public void run() {
+                    theAllocationJPanel.addMemoryChunk( finalChunk );
+                    theFreeJPanel.removeMemoryChunk( finalChunk );
+                }
+            });
+            
+            // aStr = "Allocated " + size + " bytes at Address: " + Long.toHexString(address);
 
-    //=======================================================================
-    /**
-     *
-     * @param passedAddress
-     */
-    public void removeAllocation(long passedAddress) {
-        
-        synchronized( memoryTreeMap){
-            final AllocationTuple aTuple = memoryTreeMap.remove(passedAddress);
-            if( aTuple != null ){
+        } else {
+            
+            //Free the allocation, remove entry
+            finalChunk.addFree(passedTrace);
+            //aStr = "Freeing Address: " + Long.toHexString(address);
+            
+            //Add the free
+            //Add the allocation
+            SwingUtilities.invokeLater( new Runnable(){
+                 @Override
+                public void run() {
+            
+                    theFreeJPanel.addFree( finalChunk );
+                    theAllocationJPanel.removeMemoryChunk( finalChunk );
+                }
+            });
                 
-                //Add to the list
-                //Repaint if the adddress space is open
-                SwingUtilities.invokeLater( new Runnable(){
-
-                    @Override
-                    public void run() {
-                        DefaultListModel listModel = (DefaultListModel) allocationJList.getModel();
-                        listModel.removeElement(aTuple);
-
-                        aTuple.resetAffectedChunks();
-                    }
-                });
-            }
-        }
-                
+        }        
+        
         refreshIfNeeded(passedAddress);
     }
     
@@ -784,28 +431,15 @@ public class MainFrame extends javax.swing.JFrame {
      */
     public void refreshIfNeeded( final long passedAddress ){
         
+        theMemoryJPanel.refreshMemoryPage( passedAddress );
+        
         //Repaint if the adddress space is open
         SwingUtilities.invokeLater( new Runnable(){
 
             @Override
-            public void run() {
-                //Get the model and add row
-                DefaultTableModel theModel = (DefaultTableModel)memTable.getModel();
-                long baseaddr = (passedAddress >> 16) << 16;
-
-                //Get the row count
-                if( theModel.getRowCount() > 0 ){
-
-                    //Check current base against one for passed value
-                    Long addr = (Long) theModel.getValueAt(0, 0);
-                    if( addr == baseaddr )
-                        memTable.repaint();
-                    
-                }
-                
+            public void run() {                         
                 //Repaint
-                allocationJList.repaint();
-                
+                allocTabPane.repaint();
             }
          });
     }
@@ -815,19 +449,36 @@ public class MainFrame extends javax.swing.JFrame {
      * 
      */
     private synchronized void resetGui() {
-        memoryTreeMap.clear();
-        addressTraceMap.clear();
         
-        DefaultListModel listModel = (DefaultListModel)allocationJList.getModel();
-        listModel.clear();
+        //Clear main panels
+        theMemoryJPanel.clearPanel();
+        theTraceJPanel.clearPanel();
         
-        //Clear tree model
-        DefaultTableModel theModel = (DefaultTableModel)memTable.getModel();
-        theModel.setRowCount(0);     
+        //Clear alloc panels
+        theAllocationJPanel.clearPanel();
+        theFreeJPanel.clearPanel();
         
-        //Clear trace
-        traceTextArea.setText("");
-        
+//        DefaultListModel listModel = (DefaultListModel)allocationJList.getModel();
+//        listModel.clear();
+       
+    }
+
+    //========================================================================
+    /**
+     * 
+     * @return 
+     */
+    public TraceJPanel getTracePanel() {
+        return theTraceJPanel;
+    }
+
+    //========================================================================
+    /**
+     * 
+     * @return 
+     */
+    public MemoryJPanel getMemoryPanel() {
+        return theMemoryJPanel;
     }
           
    

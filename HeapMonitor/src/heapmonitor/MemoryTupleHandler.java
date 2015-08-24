@@ -15,7 +15,7 @@ import java.util.Queue;
 public class MemoryTupleHandler extends ManagedRunnable {
 
     private final MainFrame theParentFrame;    
-    private final Queue<MemoryTuple> incomingTupleQueue = new LinkedList<>();
+    private final Queue<Object[]> incomingTraceQueue = new LinkedList<>();
     
     //=================================================================
     /**
@@ -34,7 +34,7 @@ public class MemoryTupleHandler extends ManagedRunnable {
     @Override
     public void go() {
         
-        MemoryTuple aTuple;
+        Object[] anObjArr;
         while( !shutdownRequested ){
             
             //Wait till something is added to the queue
@@ -45,13 +45,13 @@ public class MemoryTupleHandler extends ManagedRunnable {
 
 
                 // Handle the next message
-                synchronized(incomingTupleQueue) {
-                    aTuple = (MemoryTuple)incomingTupleQueue.poll();
+                synchronized(incomingTraceQueue) {
+                    anObjArr = (Object[])incomingTraceQueue.poll();
                 }
 
                 //Handles a message if there is one
-                if(aTuple != null){
-                    handleIncoming(aTuple);
+                if(anObjArr != null){
+                    handleIncoming(anObjArr);
                 }
 
             }
@@ -65,34 +65,29 @@ public class MemoryTupleHandler extends ManagedRunnable {
      * @param theMessage
      * @return 
     */
-    private void handleIncoming( final MemoryTuple aTuple ) {  
+    private void handleIncoming( final Object[] anObjArr ) {  
         
         //String aStr = null;
-        if( aTuple != null ){
+        if( anObjArr != null && anObjArr.length == 2){
         
-            //create the stack traces etc
-            aTuple.process( theParentFrame );
-            long address = aTuple.getMemoryAddress();
-            if( aTuple instanceof AllocationTuple ){  
-
-                AllocationTuple anAllocTuple = (AllocationTuple)aTuple;
-                //Add the allocation
-                //int size = anAllocTuple.getSize();
-
-                theParentFrame.addAllocation(address, anAllocTuple);
-               // aStr = "Allocated " + size + " bytes at Address: " + Long.toHexString(address);
-
-            } else if( aTuple instanceof FreeTuple ){
-
-                //Free the allocation, remove entry
-                theParentFrame.removeAllocation(address);
-                //aStr = "Freeing Address: " + Long.toHexString(address);
-                
-            }
+            Long address = (Long)anObjArr[0];
+            Trace theTrace = (Trace)anObjArr[1];
+            theParentFrame.addTrace( address, theTrace );
+//            if( theTrace instanceof AllocationTrace ){  
 //
-//            //Add to log
-//            if( aStr != null ){
-//                theParentFrame.addLogMessage(aStr);
+////                AllocationTuple anAllocTuple = (AllocationTrace)anObjArr;
+//                //Add the allocation
+//                //int size = anAllocTuple.getSize();
+//
+//                theParentFrame.addAllocation(address, anAllocTuple);
+//               // aStr = "Allocated " + size + " bytes at Address: " + Long.toHexString(address);
+//
+//            } else if( anObjArr instanceof FreeTuple ){
+//
+//                //Free the allocation, remove entry
+//                theParentFrame.removeAllocation(address);
+//                //aStr = "Freeing Address: " + Long.toHexString(address);
+//                
 //            }
         }
     }  
@@ -108,8 +103,8 @@ public class MemoryTupleHandler extends ManagedRunnable {
 
         boolean retVal;
 
-        synchronized(incomingTupleQueue) {
-            retVal = incomingTupleQueue.isEmpty();
+        synchronized(incomingTraceQueue) {
+            retVal = incomingTraceQueue.isEmpty();
         }
         return retVal;
     }
@@ -118,15 +113,16 @@ public class MemoryTupleHandler extends ManagedRunnable {
     /**
     *  Queues a MemoryTuple
     *
-    * @param passedMessage
+     * @param address
+    * @param passedTrace
     */
-    public void processIncoming( MemoryTuple passedMessage) {
+    public void processIncoming( long address, Trace passedTrace) {
 
         //Copy over the bytes
-        if(passedMessage != null){
+        if(passedTrace != null){
 
-            synchronized(incomingTupleQueue) {
-                incomingTupleQueue.add(passedMessage);
+            synchronized(incomingTraceQueue) {
+                incomingTraceQueue.add(new Object[]{ address, passedTrace });
             }
             beNotified();
 
