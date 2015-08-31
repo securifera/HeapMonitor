@@ -5,10 +5,12 @@
 #include <iostream>
 #include <stdio.h>
 #include <conio.h>
-#include <thread>
+//#include <thread>
 #include <vector>
 #include <string>
 #include <algorithm>
+
+#pragma comment (lib, "Advapi32.lib")
 
 typedef LONG (NTAPI *NtSuspendProcess)(IN HANDLE ProcessHandle);
 typedef LONG (NTAPI *NtResumeProcess)(IN HANDLE ProcessHandle);

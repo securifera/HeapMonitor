@@ -101,7 +101,7 @@ private:
 
 				} else {
 					
-					stream << "\t<no symbol>\t(";
+					stream << "<no symbol>\t\t(";
 					stream << tmpBuf;	
 					stream <<  ")\n";
 				}
