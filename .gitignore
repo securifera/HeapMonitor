@@ -55,3 +55,5 @@ heap_inject_dll/heap_inject_dll/Debug/heap_inject.dll.embed.manifest.res
 *.unsuccessfulbuild
 *.rc
 *.ipch
+/HeapMonitor/build/
+/HeapMonitor/dist/
