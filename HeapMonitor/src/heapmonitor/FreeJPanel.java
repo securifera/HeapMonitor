@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package heapmonitor;
 
 import java.awt.Font;
@@ -12,11 +7,12 @@ import javax.swing.DefaultListModel;
 
 /**
  *
- * @author user
+ * @author b0yd
  */
 public class FreeJPanel extends javax.swing.JPanel {
 
     private final MainFrame parentFrame;  
+    private boolean autoScroll = false;
     
     /**
      * Creates new form AllocationJPanel
@@ -46,7 +42,7 @@ public class FreeJPanel extends javax.swing.JPanel {
                     MemoryChunk aChunk = (MemoryChunk)freeJList.getSelectedValue();
                     if( aChunk != null ){
                         parentFrame.getTracePanel().setStackTraceTextArea( aChunk );   
-                        parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress() );
+                        parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress(), false );
                     }
                                         
                 } 
@@ -103,7 +99,15 @@ public class FreeJPanel extends javax.swing.JPanel {
     public void addFree(MemoryChunk aChunk) {
         DefaultListModel listModel = (DefaultListModel) freeJList.getModel();
         listModel.removeElement( aChunk );
-        listModel.addElement( aChunk );    
+        listModel.addElement( aChunk );   
+        
+         //If autoscroll
+        if( autoScroll ){
+            int lastIndex = listModel.getSize() - 1;
+            if (lastIndex >= 0) {
+                freeJList.ensureIndexIsVisible(lastIndex);
+            }
+        }
     }
 
     //=======================================================================
@@ -123,5 +127,14 @@ public class FreeJPanel extends javax.swing.JPanel {
     public void clearPanel() {
         DefaultListModel listModel = (DefaultListModel)freeJList.getModel();
         listModel.clear();
+    }
+    
+    //=========================================================================
+    /**
+     * 
+     * @param selected 
+     */
+    public void setAutoscrollFlag(boolean selected) {
+        autoScroll = selected;
     }
 }

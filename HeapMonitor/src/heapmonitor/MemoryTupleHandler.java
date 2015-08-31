@@ -10,7 +10,7 @@ import java.util.Queue;
 
 /**
  *
- * @author rwincey
+ * @author b0yd
  */
 public class MemoryTupleHandler extends ManagedRunnable {
 
@@ -73,22 +73,7 @@ public class MemoryTupleHandler extends ManagedRunnable {
             Long address = (Long)anObjArr[0];
             Trace theTrace = (Trace)anObjArr[1];
             theParentFrame.addTrace( address, theTrace );
-//            if( theTrace instanceof AllocationTrace ){  
-//
-////                AllocationTuple anAllocTuple = (AllocationTrace)anObjArr;
-//                //Add the allocation
-//                //int size = anAllocTuple.getSize();
-//
-//                theParentFrame.addAllocation(address, anAllocTuple);
-//               // aStr = "Allocated " + size + " bytes at Address: " + Long.toHexString(address);
-//
-//            } else if( anObjArr instanceof FreeTuple ){
-//
-//                //Free the allocation, remove entry
-//                theParentFrame.removeAllocation(address);
-//                //aStr = "Freeing Address: " + Long.toHexString(address);
-//                
-//            }
+
         }
     }  
       

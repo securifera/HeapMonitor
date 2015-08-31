@@ -9,12 +9,11 @@ import java.util.Stack;
 
 /**
  *
- * @author user
+ * @author b0yd
  */
 public class MemoryChunk {
     
     protected final long memoryAddress;
-    protected final List<MemoryChunkLabel> affectedChunks = new ArrayList<>();
     protected final Stack<AllocationTrace> allocationList = new Stack<>();
     protected final Stack<Trace> freeList = new Stack<>();
     
@@ -27,29 +26,6 @@ public class MemoryChunk {
      */
     public MemoryChunk( long passedAddress ) {
         memoryAddress = passedAddress;
-    }
-    
-    //==================================================================
-    /**
-     * 
-     * @param aLabel 
-     */
-    public void addAffectedChunk(MemoryChunkLabel aLabel) {
-        affectedChunks.add(aLabel);
-    }
-    
-    //==================================================================
-    /**
-     * 
-     */
-    public void resetAffectedChunks() {
-        //Reset the overlap and then clear
-        for( MemoryChunkLabel aLabel : affectedChunks ){
-            aLabel.setOverlap(0);
-            aLabel.setUnderlap(0);
-        }
-        
-        affectedChunks.clear();
     }
     
     //=================================================================
@@ -85,7 +61,7 @@ public class MemoryChunk {
     public void addFree( Trace freeTrace ){        
         allocated = false;        
         freeList.push(freeTrace);
-        resetAffectedChunks();
+//        resetAffectedChunks();
     }
     
     //==================================================================

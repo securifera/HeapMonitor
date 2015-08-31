@@ -1,14 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package heapmonitor;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -19,7 +12,7 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author rwincey
+ * @author b0yd
  */
 public class SocketHandler implements Runnable {
 
@@ -28,6 +21,7 @@ public class SocketHandler implements Runnable {
     
     public static final byte ALLOCATE = 0x12;
     public static final byte FREE = 0x13;
+    public static final byte SOCKET_CLOSED = -1;
     
     //=================================================================
     /**
@@ -61,6 +55,8 @@ public class SocketHandler implements Runnable {
     public void run() {
         
         try {
+            
+            boolean socketClosed = false;
             //Create the handler and start it
             MemoryTupleHandler aHandler = new MemoryTupleHandler(theParentFrame);
             aHandler.start();
@@ -71,7 +67,7 @@ public class SocketHandler implements Runnable {
             byte[] addrArr = new byte[8];
             byte[] traceLen = new byte[4];
             
-            while(true){
+            while( !socketClosed ){
                 
                 Trace aTrace = null;
                 try{
@@ -120,6 +116,9 @@ public class SocketHandler implements Runnable {
                             aTrace = new Trace( traceByteArr );
 
                             break;
+                        case SOCKET_CLOSED:
+                            socketClosed = true;
+                            break;
                         default:
                             System.err.println("Unknown message type detected.");
                             break;
@@ -136,11 +135,13 @@ public class SocketHandler implements Runnable {
         } catch (SocketException ex) {  
             if( !ex.getMessage().contains("Connection reset"))
                 Logger.getLogger(SocketHandler.class.getName()).log(Level.SEVERE, null, ex);
-            theParentFrame.setSocketHandler(null);
         } catch (IOException ex) {
             Logger.getLogger(SocketHandler.class.getName()).log(Level.SEVERE, null, ex);
-            theParentFrame.setSocketHandler(null);
         } 
+        
+        //Set socket handler to null
+        theParentFrame.setSocketHandler(null);
+        
     }
     
 }

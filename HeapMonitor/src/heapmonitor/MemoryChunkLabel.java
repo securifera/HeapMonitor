@@ -7,13 +7,14 @@ package heapmonitor;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableModel;
 
 /**
  *
- * @author rwincey
+ * @author b0yd
  */
 public class MemoryChunkLabel extends JLabel {
 
@@ -23,8 +24,8 @@ public class MemoryChunkLabel extends JLabel {
     private final TreeMap<Long,MemoryChunk> theTreeMap;
     private static final int BYTE_PIXEL_SIZE = 5;
     
-    private volatile int overlap = 0;
-    private volatile int underlap = 0;
+    private final byte LOWER_ADDRESS = 2;
+    private final byte HIGHER_ADDRESS = 3;
     
     //===================================================================
     /**
@@ -44,24 +45,6 @@ public class MemoryChunkLabel extends JLabel {
     
     //====================================================================
     /**
-     * 
-     * @param passedOverlap
-     */     
-    public void setOverlap( int passedOverlap ){
-        overlap = passedOverlap;
-    }
-    
-     //====================================================================
-    /**
-     * 
-     * @param passedUnderlap
-     */     
-    public void setUnderlap( int passedUnderlap ){
-        underlap = passedUnderlap;
-    }
-    
-    //====================================================================
-    /**
      * Override the JLabel
      * @param g 
      */
@@ -75,40 +58,67 @@ public class MemoryChunkLabel extends JLabel {
         //Get the allocated keys and paint according
         Long tempStartAddr = startAddr;
         
-        //If a previous chunk has already overflowed into this one, then paint it
-        if( overlap != 0 ){
-                        
-            //Update the starting pointer
-            int fillSize = overlap * BYTE_PIXEL_SIZE;
-            tempStartAddr += overlap;
-            
-            //Fill in the overflow
-            g.setColor(Color.BLUE);
-            g.fillRect(0, 0, fillSize, 20);
-            
-            if( overlap == endAddr - startAddr)
-                return;
-            
-        }
-        
-        //If the following chunk has underflowed into this one
-        if( underlap != 0 ){
-                        
-            //Update the starting pointer
-            int fillSize = underlap * BYTE_PIXEL_SIZE;
-            Long anAddr = endAddr - underlap;
-            int paintAddr = (int) ((anAddr - startAddr) * BYTE_PIXEL_SIZE);
-            
-            //Fill in the overflow
-            g.setColor(Color.YELLOW);
-            g.fillRect(paintAddr, 0, fillSize, 20);
-            
-            if( underlap == endAddr - startAddr)
-                return;
-            
-        }
-            
         synchronized(theTreeMap){
+            
+            //Get previous allocation and see if it overflowed into our chunk
+            int overlap = 0;
+            Entry< Long, MemoryChunk> lowerEntry = getAllocation(LOWER_ADDRESS, startAddr);
+            if( lowerEntry != null ){
+                
+                MemoryChunk prevChunk = lowerEntry.getValue();
+                int prevSize = prevChunk.getAllocatedSize();
+                
+                //Calculate overflow
+                long prevStarAddr = lowerEntry.getKey();
+                if( prevStarAddr + prevSize > endAddr )
+                    overlap = (int) (endAddr - startAddr);
+                else if( prevStarAddr + prevSize > startAddr )
+                    overlap = (int) ( (prevStarAddr + prevSize) - startAddr );
+                
+            }
+            
+            //If a previous chunk has already overflowed into this one, then paint it
+            if( overlap != 0 ){
+
+                //Update the starting pointer
+                int fillSize = overlap * BYTE_PIXEL_SIZE;
+                tempStartAddr += overlap;
+
+                //Fill in the overflow
+                g.setColor(Color.BLUE);
+                g.fillRect(0, 0, fillSize, 20);
+
+                if( overlap == endAddr - startAddr)
+                    return;
+
+            }
+            
+             //Get previous allocation and see if it overflowed into our chunk
+            int underlap = 0;
+            Entry< Long, MemoryChunk> higherEntry = getAllocation(HIGHER_ADDRESS, endAddr - 1);
+            if( higherEntry != null ){
+                //Calculate underflow
+                long headerStartAddr = higherEntry.getKey() - MainFrame.ALLOCATION_HEADER_SIZE;
+                if( headerStartAddr < endAddr )
+                    underlap = (int) (endAddr - headerStartAddr);
+            }
+            
+            //If the following chunk has underflowed into this one
+            if( underlap != 0 ){
+
+                //Update the starting pointer
+                int fillSize = underlap * BYTE_PIXEL_SIZE;
+                Long anAddr = endAddr - underlap;
+                int paintAddr = (int) ((anAddr - startAddr) * BYTE_PIXEL_SIZE);
+
+                //Fill in the overflow
+                g.setColor(Color.YELLOW);
+                g.fillRect(paintAddr, 0, fillSize, 20);
+
+                if( underlap == endAddr - startAddr)
+                    return;
+
+            }
             
             Long nextAddr;
             //See if a tuple starts at the current address, if not get the next
@@ -124,28 +134,16 @@ public class MemoryChunkLabel extends JLabel {
                 
                 //Fill in header
                 if( aMemChunk.isAllocated() ){
-                    Long headerStartAddr = (tempStartAddr - startAddr) - 8;
+                    Long headerStartAddr = (tempStartAddr - startAddr) - MainFrame.ALLOCATION_HEADER_SIZE;
                     if( headerStartAddr >= 0 ){
                         Long fillValue = headerStartAddr * BYTE_PIXEL_SIZE;
                         g.setColor(Color.YELLOW);
-                        g.fillRect(fillValue.intValue(), 0, BYTE_PIXEL_SIZE * 8, 20);                  
-                    } else {
-
-                        //Fill the amount in this chunk first
-                        Long diff = 8 + headerStartAddr;
-                        g.setColor(Color.YELLOW);
-                        g.fillRect(0, 0, BYTE_PIXEL_SIZE * diff.intValue(), 20);  
-
-                        //Update the previous chunk
-                        updatePreviousChunks(aMemChunk, (int)Math.abs(headerStartAddr));
+                        g.fillRect(fillValue.intValue(), 0, BYTE_PIXEL_SIZE * MainFrame.ALLOCATION_HEADER_SIZE, 20);                  
                     }     
 
                     //Color in the first chunk
                     if( tempStartAddr + size >  endAddr){
 
-                        //Pass on the remainder
-                        Long remainder = size - (endAddr - tempStartAddr);   
-                        updateFollowingChunks( aMemChunk, remainder.intValue() );
                         //Fill in the rect                    
                         g.setColor(Color.BLUE);
                         g.fillRect(startX.intValue(), 0, BYTE_PIXEL_SIZE * (int)(endAddr - tempStartAddr), 20);                    
@@ -185,25 +183,14 @@ public class MemoryChunkLabel extends JLabel {
                     if( headerStartAddr >= 0 ){
                         Long fillValue = headerStartAddr * BYTE_PIXEL_SIZE;
                         g.setColor(Color.YELLOW);
-                        g.fillRect(fillValue.intValue(), 0, BYTE_PIXEL_SIZE * 8, 20);                  
-                    } else {
-
-                        //Fill the amount in this chunk first
-                        Long diff = 8 + headerStartAddr;
-                        g.setColor(Color.YELLOW);
-                        g.fillRect(0, 0, BYTE_PIXEL_SIZE * diff.intValue(), 20);  
-
-                        //Update the previous chunk
-                        updatePreviousChunks(aMemChunk, (int)Math.abs(headerStartAddr));
+                        g.fillRect(fillValue.intValue(), 0, BYTE_PIXEL_SIZE * MainFrame.ALLOCATION_HEADER_SIZE, 20);                  
                     }  
 
                     //Color in the first chunk
                     Long startX = (nextAddr - startAddr) * BYTE_PIXEL_SIZE;
                     if( nextAddr + size >  endAddr){
 
-                        Long remainder = size - (endAddr - nextAddr); 
-                        updateFollowingChunks( aMemChunk, remainder.intValue() );                    
-                         //Fill in the rect                    
+                        //Fill in the rect                    
                         g.setColor(Color.BLUE);
                         g.fillRect(startX.intValue(), 0, BYTE_PIXEL_SIZE * (int)(endAddr - nextAddr), 20);                    
                         return;
@@ -220,74 +207,26 @@ public class MemoryChunkLabel extends JLabel {
         }
     }
     
-    //====================================================================
+    //=========================================================================
     /**
      * 
-     * @param remainder 
+     * @param direction
+     * @param address
+     * @return 
      */
-    private void updatePreviousChunks( MemoryChunk passedChunk, int remainder) {
-        
-        //Calculate the affected row
-        Long entrySize = endAddr - startAddr;
-        Long baseaddr = (startAddr >> 16) << 16;
-        Long diff = startAddr - baseaddr;
-        int row = (int)Math.floor(diff/entrySize);
-        
-        //Loop through and update the affected chunks
-        int numChunksAffected = (int) Math.ceil( (double)remainder / (double)entrySize);
-        for( int i=1; i < numChunksAffected + 1; i++ ){
-            
-            //Get the next label and add it to be tracked
-            if( row - i >= 0 ){
-                MemoryChunkLabel aLabel = (MemoryChunkLabel) parentModel.getValueAt(row - i, 1);
-                passedChunk.addAffectedChunk(aLabel);
+    public Entry< Long, MemoryChunk> getAllocation( byte direction, long address ){
+        Entry< Long, MemoryChunk> retEntry = null;
+        if( direction == LOWER_ADDRESS)
+            retEntry = theTreeMap.lowerEntry(address);
+        else if( direction == HIGHER_ADDRESS)
+            retEntry = theTreeMap.higherEntry(address);
                 
-                //Set the underlap 
-                if( remainder <= entrySize ){
-                    aLabel.setUnderlap(remainder);
-                } else{
-                    aLabel.setUnderlap(entrySize.intValue());
-                    remainder -= entrySize;
-                }   
-            } else {
-                break;
-            }
+        //Make sure it is allocated
+        if( retEntry != null ){
+            MemoryChunk prevChunk = retEntry.getValue();
+            if( !prevChunk.isAllocated())
+                retEntry = getAllocation(direction, retEntry.getKey());                
         }
+        return retEntry;
     }
-
-    //====================================================================
-    /**
-     * 
-     * @param remainder 
-     */
-    private void updateFollowingChunks( MemoryChunk passedChunk, int remainder) {
-        
-        //Calculate the affected row
-        Long entrySize = endAddr - startAddr;
-        Long baseaddr = (startAddr >> 16) << 16;
-        Long diff = startAddr - baseaddr;
-        int row = (int)Math.floor(diff/entrySize);
-        
-        //Loop through and update the affected chunks
-        int numChunksAffected = (int) Math.ceil( (double)remainder / (double)entrySize);
-        for( int i=1; i < numChunksAffected + 1; i++ ){
-            
-            //Get the next label and add it to be tracked
-            if( row + i < 512 ){
-                MemoryChunkLabel aLabel = (MemoryChunkLabel) parentModel.getValueAt(row + i, 1);
-                passedChunk.addAffectedChunk(aLabel);
-
-                //Set the overlap 
-                if( remainder <= entrySize ){
-                    aLabel.setOverlap(remainder);
-                } else{
-                    aLabel.setOverlap(entrySize.intValue());
-                    remainder -= entrySize;
-                }               
-            } else {
-                break;
-            }
-        }
-    }
-
 }

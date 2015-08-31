@@ -1,15 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package heapmonitor;
 
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.Rectangle;
 import java.util.TreeMap;
-import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
@@ -20,7 +14,7 @@ import javax.swing.table.TableColumnModel;
 
 /**
  *
- * @author rwincey
+ * @author b0yd
  */
 public class MemoryJPanel extends javax.swing.JPanel {
 
@@ -28,6 +22,7 @@ public class MemoryJPanel extends javax.swing.JPanel {
     private static final int MAX_ROW_LENGTH = 0x80;
     private JTable memTable;
     private final MainFrame parentFrame;
+    private MemoryMapLabel memoryMapLabel;
     
     /**
      * Creates new form MemoryJPanel
@@ -50,6 +45,7 @@ public class MemoryJPanel extends javax.swing.JPanel {
         memTable.setShowVerticalLines(true);
         memTable.setTableHeader(null);
         memTable.setFont( new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        memTable.setEnabled(false);
        
         //Create DefaultTableModel
         DefaultTableModel aModel = new DefaultTableModel(0,2);
@@ -90,24 +86,54 @@ public class MemoryJPanel extends javax.swing.JPanel {
            
         //Set the view
         memoryTableScrollPane.setViewportView(memTable);
- 
+        
+        //Add memoryMapLabel to memory jpanel
+        memoryMapLabel = new MemoryMapLabel( this );
+        javax.swing.GroupLayout memoryPanelLayout = new javax.swing.GroupLayout(memoryPanel);
+        memoryPanel.setLayout(memoryPanelLayout);
+        memoryPanelLayout.setHorizontalGroup(
+            memoryPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(memoryPanelLayout.createSequentialGroup()
+                    .addGap(14)
+                    .addComponent(memoryMapLabel, javax.swing.GroupLayout.PREFERRED_SIZE, MemoryMapLabel.MEMORY_MAP_LABEL_WIDTH, MemoryMapLabel.MEMORY_MAP_LABEL_WIDTH)
+                    .addGap(14))
+        );
+        memoryPanelLayout.setVerticalGroup(
+            memoryPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(memoryPanelLayout.createSequentialGroup()
+                    .addGap(10)
+                    .addComponent(memoryMapLabel, javax.swing.GroupLayout.PREFERRED_SIZE, MemoryMapLabel.MEMORY_MAP_LABEL_HEIGHT, MemoryMapLabel.MEMORY_MAP_LABEL_HEIGHT)
+                    .addGap(2))
+        );
+         
     }
     
     //=======================================================================
     /**
      * 
-     * @param passedAddress 
+     * @param memAddress 
+     * @param firstAlloc 
      */ 
-    public void loadMemoryPage( final long passedAddress ){
+    public void loadMemoryPage( final long memAddress, final boolean firstAlloc ){
         
         SwingUtilities.invokeLater( new Runnable(){
 
             @Override
             public void run() {
                 
+                long passedAddress = memAddress;
+                
                 //Get the model and add row
                 DefaultTableModel theModel = (DefaultTableModel)memTable.getModel();
                 long baseaddr = (passedAddress >> 16) << 16;
+                
+                //Goto first allocation 
+                if( firstAlloc){
+                    long firstAddress = memoryTreeMap.higherKey(passedAddress);
+                    if( firstAddress < baseaddr + 0x10000)
+                        passedAddress = firstAddress;
+                }
+                
                 
                 //Get the row count
                 if( theModel.getRowCount() > 0 ){
@@ -188,7 +214,7 @@ public class MemoryJPanel extends javax.swing.JPanel {
         );
         memoryPanelLayout.setVerticalGroup(
             memoryPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 33, Short.MAX_VALUE)
+            .addGap(0, 36, Short.MAX_VALUE)
         );
 
         jLabel10.setFont(new java.awt.Font("FreeMono", 1, 10)); // NOI18N
@@ -337,7 +363,7 @@ public class MemoryJPanel extends javax.swing.JPanel {
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
                     .addGap(62, 62, 62)
-                    .addComponent(memoryTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 509, Short.MAX_VALUE)
+                    .addComponent(memoryTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 512, Short.MAX_VALUE)
                     .addContainerGap()))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -388,9 +414,13 @@ public class MemoryJPanel extends javax.swing.JPanel {
      */
     public void setMemoryChunk(long passedAddress, MemoryChunk aChunk) {
     
+        TreeMap<Long, MemoryChunk> memoryTreeMapCpy = new TreeMap();
         synchronized( memoryTreeMap){
             memoryTreeMap.put( passedAddress, aChunk );
+            memoryTreeMapCpy.putAll(memoryTreeMap);
         }
+        
+        memoryMapLabel.updateMemoryMap(memoryTreeMapCpy);
     }
 
     //=====================================================================
@@ -399,11 +429,27 @@ public class MemoryJPanel extends javax.swing.JPanel {
      */
     public void clearPanel() {
         
-        memoryTreeMap.clear();        
-                
+        memoryTreeMap.clear();  
+        
+        memoryMapLabel.clear();
+                        
         //Clear tree model
         DefaultTableModel theModel = (DefaultTableModel)memTable.getModel();
         theModel.setRowCount(0); 
+    }
+    
+    //=====================================================================
+    /**
+     * 
+     */
+    public void refreshMemoryMap() {
+        //Repaint if the adddress space is open
+        SwingUtilities.invokeLater( new Runnable(){
+            @Override
+            public void run() {
+                memoryMapLabel.repaint();
+            }
+        });
     }
 
     //=====================================================================

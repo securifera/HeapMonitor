@@ -6,25 +6,21 @@
 
 package heapmonitor;
 
-import java.awt.Font;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.DefaultListModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 /**
  *
- * @author rwincey
+ * @author b0yd
  */
 public class MainFrame extends javax.swing.JFrame {
-
+   
     private SocketHandler theSocketHandler = null;
     public static ExecutorService Executor;
     private TraceJPanel theTraceJPanel;
@@ -32,13 +28,8 @@ public class MainFrame extends javax.swing.JFrame {
     private AllocationJPanel theAllocationJPanel;
     private FreeJPanel theFreeJPanel;
     
-    
-//    private final TreeMap<Long, MemoryChunk> memoryTreeMap = new TreeMap();
-//    private final HashMap<Long, Trace> addressTraceMap = new HashMap<>();
-    
-    //private static final int MAX_WIDTH = 790;
-//    private static final int MAX_ROW_LENGTH = 0x80;
-//    private JTable memTable;
+    public static int ALLOCATION_HEADER_SIZE = 8;
+    public static boolean AUTOSCROLL_FLAG = true;
     
     /**
      * Creates new form MainFrame
@@ -71,7 +62,8 @@ public class MainFrame extends javax.swing.JFrame {
         menuBar = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         exitButton = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
+        editMenu = new javax.swing.JMenu();
+        optionsMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setPreferredSize(new java.awt.Dimension(1015, 780));
@@ -167,8 +159,18 @@ public class MainFrame extends javax.swing.JFrame {
 
         menuBar.add(fileMenu);
 
-        jMenu2.setText("Edit");
-        menuBar.add(jMenu2);
+        editMenu.setText("Edit");
+
+        optionsMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
+        optionsMenuItem.setText("Options");
+        optionsMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                optionsMenuItemActionPerformed(evt);
+            }
+        });
+        editMenu.add(optionsMenuItem);
+
+        menuBar.add(editMenu);
 
         setJMenuBar(menuBar);
 
@@ -221,16 +223,22 @@ public class MainFrame extends javax.swing.JFrame {
         int theAddr;
         try {
             theAddr = Integer.parseInt(theAddressStr, radix);
-            theMemoryJPanel.loadMemoryPage(theAddr);
+            theMemoryJPanel.loadMemoryPage(theAddr, false);
         } catch( NumberFormatException ex ){
             try {
                 radix = 16;
                 theAddr = Integer.parseInt(theAddressStr, radix);
-                theMemoryJPanel.loadMemoryPage(theAddr);
+                theMemoryJPanel.loadMemoryPage(theAddr, false);
             } catch( NumberFormatException ex1 ){
             }
         }
     }//GEN-LAST:event_goButtonActionPerformed
+
+    private void optionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_optionsMenuItemActionPerformed
+        OptionsJDialog options = new OptionsJDialog( this, true );
+        options.setLocationRelativeTo(null);
+        options.setVisible(true);
+    }//GEN-LAST:event_optionsMenuItemActionPerformed
 
     /**
      * @param args the command line arguments
@@ -261,6 +269,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JTabbedPane allocTabPane;
     private javax.swing.JButton connectButton;
     private javax.swing.JPanel connectPanel;
+    private javax.swing.JMenu editMenu;
     private javax.swing.JMenuItem exitButton;
     private javax.swing.JMenu fileMenu;
     private javax.swing.JButton goButton;
@@ -268,9 +277,9 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel5;
-    private javax.swing.JMenu jMenu2;
     private javax.swing.JTabbedPane mainTabPane;
     private javax.swing.JMenuBar menuBar;
+    private javax.swing.JMenuItem optionsMenuItem;
     private javax.swing.JTextField portField;
     // End of variables declaration//GEN-END:variables
 
@@ -333,6 +342,9 @@ public class MainFrame extends javax.swing.JFrame {
         
         //Create thread pool
         Executor = Executors.newCachedThreadPool();
+        
+        theAllocationJPanel.setAutoscrollFlag(AUTOSCROLL_FLAG);
+        theFreeJPanel.setAutoscrollFlag(AUTOSCROLL_FLAG);
                  
     }
 
@@ -367,20 +379,8 @@ public class MainFrame extends javax.swing.JFrame {
                        
         //Get the memory chunk if it exists
         MemoryChunk aChunk = theMemoryJPanel.getMemoryChunk( passedAddress );
-        if( aChunk == null ){
+        if( aChunk == null )
             aChunk = new MemoryChunk(passedAddress);
-            theMemoryJPanel.setMemoryChunk(passedAddress, aChunk);
-
-//            final MemoryChunk finalChunk = aChunk;
-//            SwingUtilities.invokeLater( new Runnable(){
-//
-//                @Override
-//                public void run() {
-//                    DefaultListModel listModel = (DefaultListModel) allocationJList.getModel();
-//                    listModel.addElement(finalChunk);
-//                }
-//            });
-        }
         
              
         //Add to the chunk
@@ -392,7 +392,6 @@ public class MainFrame extends javax.swing.JFrame {
             
             //Add the allocation
             SwingUtilities.invokeLater( new Runnable(){
-
                 @Override
                 public void run() {
                     theAllocationJPanel.addMemoryChunk( finalChunk );
@@ -419,9 +418,12 @@ public class MainFrame extends javax.swing.JFrame {
                 }
             });
                 
-        }        
+        }     
         
-        refreshIfNeeded(passedAddress);
+        //Update the chunk
+        theMemoryJPanel.setMemoryChunk(passedAddress, aChunk);
+                
+        refreshComponents(passedAddress);
     }
     
     //=======================================================================
@@ -429,7 +431,7 @@ public class MainFrame extends javax.swing.JFrame {
      * 
      * @param passedAddress 
      */
-    public void refreshIfNeeded( final long passedAddress ){
+    public void refreshComponents( final long passedAddress ){
         
         theMemoryJPanel.refreshMemoryPage( passedAddress );
         
@@ -457,9 +459,6 @@ public class MainFrame extends javax.swing.JFrame {
         //Clear alloc panels
         theAllocationJPanel.clearPanel();
         theFreeJPanel.clearPanel();
-        
-//        DefaultListModel listModel = (DefaultListModel)allocationJList.getModel();
-//        listModel.clear();
        
     }
 
@@ -479,6 +478,19 @@ public class MainFrame extends javax.swing.JFrame {
      */
     public MemoryJPanel getMemoryPanel() {
         return theMemoryJPanel;
+    }
+
+    //========================================================================
+    /**
+     * 
+     * @param selected 
+     */
+    public void setScrollFlag(boolean selected) {
+        theAllocationJPanel.setAutoscrollFlag(selected);
+        theFreeJPanel.setAutoscrollFlag(selected);
+        
+        //Set autoscroll flag
+        AUTOSCROLL_FLAG = selected;
     }
           
    
