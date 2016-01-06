@@ -1,9 +1,9 @@
 Heap Monitor
 =====
 
-HeapMonitor is a tool to allow you to visually remotely monitor the heap memory allocations and deallocations happening
-in Windows applications in real-time. It also provides a stack trace of each allocation and free so you can locate 
-where the calls are being made from.  
+HeapMonitor is a tool to allow you to visually monitor the heap memory allocations and deallocations happening 
+in a Windows application in real-time on a remote system. It also provides a stack trace of each allocation and 
+free so you can locate where the calls are being made from.  
 
 The tool is composed of two main parts.
 
@@ -23,3 +23,6 @@ into the target process. Once the DLL has been injected, it waits for a connecti
 The Observer application uses the MinHook library (https://github.com/TsudaKageyu/minhook) for function hooking
 and built upon Luke Dodd's Heapy tool (https://github.com/lukedodd/Heapy).
 
+
+
+The tool has currently only been tested on 32bit applications but has support through MinHook for 64bit.
