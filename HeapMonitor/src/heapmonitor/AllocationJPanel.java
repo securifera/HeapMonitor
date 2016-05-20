@@ -5,6 +5,8 @@ import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.DefaultListModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 /**
  *
@@ -35,18 +37,27 @@ public class AllocationJPanel extends javax.swing.JPanel {
         allocationJList.setModel(listModel);
         allocationJList.setFont( new Font(Font.MONOSPACED, Font.PLAIN, 12 ));
         
-        allocationJList.addMouseListener(new MouseAdapter() {
+        allocationJList.addListSelectionListener( new ListSelectionListener() {
+//            @Override
+//            public void mouseClicked(MouseEvent evt) {
+//                if (evt.getClickCount() == 1) {
+//                    
+//                    MemoryChunk aChunk = (MemoryChunk)allocationJList.getSelectedValue();
+//                    if( aChunk != null ){
+//                        parentFrame.getTracePanel().setStackTraceTextArea( aChunk );   
+//                        parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress(), false );
+//                    }
+//                                        
+//                } 
+//            }
+
             @Override
-            public void mouseClicked(MouseEvent evt) {
-                if (evt.getClickCount() == 1) {
-                    
-                    MemoryChunk aChunk = (MemoryChunk)allocationJList.getSelectedValue();
-                    if( aChunk != null ){
-                        parentFrame.getTracePanel().setStackTraceTextArea( aChunk );   
-                        parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress(), false );
-                    }
-                                        
-                } 
+            public void valueChanged(ListSelectionEvent e) {
+                MemoryChunk aChunk = (MemoryChunk)allocationJList.getSelectedValue();
+                if( aChunk != null ){
+                    parentFrame.getTracePanel().setStackTraceTextArea( aChunk );   
+                    parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress(), false );
+                }
             }
 
         });
@@ -92,6 +103,15 @@ public class AllocationJPanel extends javax.swing.JPanel {
     private javax.swing.JScrollPane allocationScrollPane;
     // End of variables declaration//GEN-END:variables
 
+    //=======================================================================
+    /**
+     * 
+     * @param aChunk 
+     */
+    public void setSelected(MemoryChunk aChunk) {
+        allocationJList.setSelectedValue(aChunk, true);
+    }
+    
     //=======================================================================
     /**
      * 

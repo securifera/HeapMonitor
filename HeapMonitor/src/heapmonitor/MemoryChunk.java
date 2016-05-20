@@ -34,8 +34,12 @@ public class MemoryChunk {
      * @param passedAllocation
      */
     public void addAllocation( AllocationTrace passedAllocation ){        
-        allocated = true;        
+        allocated = true;  
+        
         allocationList.push(passedAllocation);
+        if( allocationList.size() > 20 )
+            allocationList.removeElementAt(0);
+        
     }
     
     //=================================================================
@@ -61,7 +65,8 @@ public class MemoryChunk {
     public void addFree( Trace freeTrace ){        
         allocated = false;        
         freeList.push(freeTrace);
-//        resetAffectedChunks();
+        if( freeList.size() > 20 )
+            freeList.removeElementAt(0);
     }
     
     //==================================================================

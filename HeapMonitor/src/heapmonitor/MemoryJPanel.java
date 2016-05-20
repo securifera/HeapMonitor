@@ -3,6 +3,9 @@ package heapmonitor;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.Map;
 import java.util.TreeMap;
 import javax.swing.JLabel;
 import javax.swing.JTable;
@@ -16,13 +19,17 @@ import javax.swing.table.TableColumnModel;
  *
  * @author b0yd
  */
-public class MemoryJPanel extends javax.swing.JPanel {
+public final class MemoryJPanel extends javax.swing.JPanel {
 
     private final TreeMap<Long, MemoryChunk> memoryTreeMap = new TreeMap();
     private static final int MAX_ROW_LENGTH = 0x80;
     private JTable memTable;
     private final MainFrame parentFrame;
-    private MemoryMapLabel memoryMapLabel;
+    private MemoryMapLabel memoryMapLabel;    
+    
+    public static final byte LOWER_ADDRESS = 2;
+    public static final byte HIGHER_ADDRESS = 3;
+    public static final byte LOWER_EQUAL_ADDRESS = 4;
     
     /**
      * Creates new form MemoryJPanel
@@ -105,7 +112,39 @@ public class MemoryJPanel extends javax.swing.JPanel {
                     .addComponent(memoryMapLabel, javax.swing.GroupLayout.PREFERRED_SIZE, MemoryMapLabel.MEMORY_MAP_LABEL_HEIGHT, MemoryMapLabel.MEMORY_MAP_LABEL_HEIGHT)
                     .addGap(2))
         );
+        
+        //Add mouse listener to the table
+        memTable.addMouseListener(new MouseAdapter()  
+        {  
+            @Override
+            public void mouseClicked(MouseEvent e)  
+            {  
+                int row = memTable.rowAtPoint(e.getPoint());
+                DefaultTableModel theModel = (DefaultTableModel)memTable.getModel();
+                Long startAddr = (Long) theModel.getValueAt(row, 0);
+                
+                int x_pos = e.getX();
+                int cur_byte = x_pos / MemoryChunkLabel.BYTE_PIXEL_SIZE;
+                Long result = startAddr + cur_byte;
+                
+                //Get the allocation for this address
+                Map.Entry< Long, MemoryChunk> curEntry = getAllocation( MemoryJPanel.LOWER_EQUAL_ADDRESS, result);
+                if( curEntry != null ){
+                    MemoryChunk aChunk = curEntry.getValue();
+                    getMainFrame().setSelectedChunk(aChunk);
+                }
+            }  
+        }); 
          
+    }
+    
+    //=======================================================================
+    /**
+     * 
+     * @return 
+     */
+    public MainFrame getMainFrame(){
+        return parentFrame;
     }
     
     //=======================================================================
@@ -116,6 +155,7 @@ public class MemoryJPanel extends javax.swing.JPanel {
      */ 
     public void loadMemoryPage( final long memAddress, final boolean firstAlloc ){
         
+        final MemoryJPanel thisPanel = this;
         SwingUtilities.invokeLater( new Runnable(){
 
             @Override
@@ -145,7 +185,8 @@ public class MemoryJPanel extends javax.swing.JPanel {
 
                         long startAddr = baseaddr;
                         for( int i=0; i< 0x200; i++){
-                            theModel.addRow(new Object[]{ startAddr, new MemoryChunkLabel(theModel, memoryTreeMap, startAddr, startAddr + MAX_ROW_LENGTH)  });
+                            theModel.addRow(new Object[]{ startAddr, new MemoryChunkLabel( thisPanel, memoryTreeMap, startAddr, startAddr + MAX_ROW_LENGTH)  });
+                            
                             startAddr += 0x80;
                         }
                     }
@@ -155,7 +196,7 @@ public class MemoryJPanel extends javax.swing.JPanel {
                     //Add addresses for first time
                     long startAddr = baseaddr;
                     for( int i=0; i< 0x200; i++){
-                        theModel.addRow(new Object[]{ startAddr, new MemoryChunkLabel(theModel, memoryTreeMap, startAddr, startAddr + MAX_ROW_LENGTH)  });
+                        theModel.addRow(new Object[]{ startAddr, new MemoryChunkLabel(thisPanel, memoryTreeMap, startAddr, startAddr + MAX_ROW_LENGTH)  });
                         startAddr += 0x80;
                     }
                     
@@ -479,5 +520,30 @@ public class MemoryJPanel extends javax.swing.JPanel {
                 });
             }
         }
+    }
+    
+    //=========================================================================
+    /**
+     * 
+     * @param direction
+     * @param address
+     * @return 
+     */
+    public Map.Entry< Long, MemoryChunk> getAllocation( byte direction, long address ){
+        Map.Entry< Long, MemoryChunk> retEntry = null;
+        if( direction == LOWER_ADDRESS)
+            retEntry = memoryTreeMap.lowerEntry(address);
+        else if( direction == HIGHER_ADDRESS)
+            retEntry = memoryTreeMap.higherEntry(address);
+        else if( direction == LOWER_EQUAL_ADDRESS)
+            retEntry = memoryTreeMap.floorEntry(address);
+                
+        //Make sure it is allocated
+        if( retEntry != null ){
+            MemoryChunk prevChunk = retEntry.getValue();
+            if( !prevChunk.isAllocated())
+                retEntry = getAllocation(direction, retEntry.getKey());                
+        }
+        return retEntry;
     }
 }

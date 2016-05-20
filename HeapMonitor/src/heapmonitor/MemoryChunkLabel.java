@@ -7,10 +7,11 @@ package heapmonitor;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import javax.swing.JLabel;
-import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -18,29 +19,45 @@ import javax.swing.table.DefaultTableModel;
  */
 public class MemoryChunkLabel extends JLabel {
 
-    private final DefaultTableModel parentModel;
+    
+    private final MemoryJPanel parentPanel;
     private final Long startAddr;
     private final Long endAddr;
     private final TreeMap<Long,MemoryChunk> theTreeMap;
-    private static final int BYTE_PIXEL_SIZE = 5;
-    
-    private final byte LOWER_ADDRESS = 2;
-    private final byte HIGHER_ADDRESS = 3;
-    
+    public static final int BYTE_PIXEL_SIZE = 5;
+        
     //===================================================================
     /**
      * Constructor 
-     * @param passedModel
+     * @param passedPanel
      * @param treeMap
      * @param startingAddr
      * @param endingAddr
      */
-    public MemoryChunkLabel( DefaultTableModel passedModel, TreeMap<Long,MemoryChunk> treeMap, Long startingAddr, Long endingAddr ) {
+    public MemoryChunkLabel( MemoryJPanel passedPanel, TreeMap<Long,MemoryChunk> treeMap, Long startingAddr, Long endingAddr ) {
         super();
-        parentModel = passedModel;
+        parentPanel = passedPanel;
         theTreeMap = treeMap;
         startAddr = startingAddr;
         endAddr = endingAddr;
+        
+        addMouseListener(new MouseAdapter()  
+        {  
+            @Override
+            public void mouseClicked(MouseEvent e)  
+            {  
+                int x_pos = e.getX();
+                int cur_byte = x_pos / BYTE_PIXEL_SIZE;
+                Long result = startAddr + cur_byte;
+                
+                //Get the allocation for this address
+                Entry< Long, MemoryChunk> curEntry = parentPanel.getAllocation( MemoryJPanel.LOWER_ADDRESS, result);
+                if( curEntry != null ){
+                    MemoryChunk aChunk = curEntry.getValue();
+                    parentPanel.getMainFrame().setSelectedChunk(aChunk);
+                }
+            }  
+        }); 
     }
     
     //====================================================================
@@ -62,7 +79,7 @@ public class MemoryChunkLabel extends JLabel {
             
             //Get previous allocation and see if it overflowed into our chunk
             int overlap = 0;
-            Entry< Long, MemoryChunk> lowerEntry = getAllocation(LOWER_ADDRESS, startAddr);
+            Entry< Long, MemoryChunk> lowerEntry = parentPanel.getAllocation( MemoryJPanel.LOWER_ADDRESS, startAddr);
             if( lowerEntry != null ){
                 
                 MemoryChunk prevChunk = lowerEntry.getValue();
@@ -95,7 +112,7 @@ public class MemoryChunkLabel extends JLabel {
             
              //Get previous allocation and see if it overflowed into our chunk
             int underlap = 0;
-            Entry< Long, MemoryChunk> higherEntry = getAllocation(HIGHER_ADDRESS, endAddr - 1);
+            Entry< Long, MemoryChunk> higherEntry = parentPanel.getAllocation( MemoryJPanel.HIGHER_ADDRESS, endAddr - 1);
             if( higherEntry != null ){
                 //Calculate underflow
                 long headerStartAddr = higherEntry.getKey() - MainFrame.ALLOCATION_HEADER_SIZE;
@@ -207,26 +224,26 @@ public class MemoryChunkLabel extends JLabel {
         }
     }
     
-    //=========================================================================
-    /**
-     * 
-     * @param direction
-     * @param address
-     * @return 
-     */
-    public Entry< Long, MemoryChunk> getAllocation( byte direction, long address ){
-        Entry< Long, MemoryChunk> retEntry = null;
-        if( direction == LOWER_ADDRESS)
-            retEntry = theTreeMap.lowerEntry(address);
-        else if( direction == HIGHER_ADDRESS)
-            retEntry = theTreeMap.higherEntry(address);
-                
-        //Make sure it is allocated
-        if( retEntry != null ){
-            MemoryChunk prevChunk = retEntry.getValue();
-            if( !prevChunk.isAllocated())
-                retEntry = getAllocation(direction, retEntry.getKey());                
-        }
-        return retEntry;
-    }
+//    //=========================================================================
+//    /**
+//     * 
+//     * @param direction
+//     * @param address
+//     * @return 
+//     */
+//    public Entry< Long, MemoryChunk> getAllocation( byte direction, long address ){
+//        Entry< Long, MemoryChunk> retEntry = null;
+//        if( direction == LOWER_ADDRESS)
+//            retEntry = theTreeMap.lowerEntry(address);
+//        else if( direction == HIGHER_ADDRESS)
+//            retEntry = theTreeMap.higherEntry(address);
+//                
+//        //Make sure it is allocated
+//        if( retEntry != null ){
+//            MemoryChunk prevChunk = retEntry.getValue();
+//            if( !prevChunk.isAllocated())
+//                retEntry = getAllocation(direction, retEntry.getKey());                
+//        }
+//        return retEntry;
+//    }
 }
