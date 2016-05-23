@@ -126,7 +126,7 @@ extern "C" int main(int argc, char* argv[]){
 	
 	if(argc < 2){
 		std::cout << "No arguments specified!\n\n";
-		std::cout << "Usage: Heapy -p pid -e <exe path> -a [args to pass to exe]\n\n"
+		std::cout << "Usage: DllInjector -p pid -e <exe path> -a [args to pass to exe]\n\n"
 					 "       -p Provide the process pid if you wish to attach to a running process\n"
 		             "       -e Path to exe to launch \n"
 					 "       -d Path to dll to inject \n"
