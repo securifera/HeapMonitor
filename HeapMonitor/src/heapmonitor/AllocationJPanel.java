@@ -5,6 +5,8 @@ import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.DefaultListModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 /**
  *
@@ -33,25 +35,24 @@ public class AllocationJPanel extends javax.swing.JPanel {
     
         DefaultListModel listModel = new DefaultListModel();
         allocationJList.setModel(listModel);
-        allocationJList.setFont( new Font(Font.MONOSPACED, Font.PLAIN, 12 ));
-        
-        allocationJList.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent evt) {
-                if (evt.getClickCount() == 1) {
-                    
-                    MemoryChunk aChunk = (MemoryChunk)allocationJList.getSelectedValue();
-                    if( aChunk != null ){
-                        parentFrame.getTracePanel().setStackTraceTextArea( aChunk );   
-                        parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress(), false );
-                    }
-                                        
-                } 
-            }
+        allocationJList.setFont( new Font(Font.MONOSPACED, Font.PLAIN, 12 )); 
+        allocationJList.addListSelectionListener( new ListSelectionListener() {
 
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if( !e.getValueIsAdjusting())
+                    loadMemoryAddr();
+            }
         });
     }
 
+    private void loadMemoryAddr(){
+        MemoryChunk aChunk = (MemoryChunk)allocationJList.getSelectedValue();
+        if( aChunk != null ){
+            parentFrame.getTracePanel().setStackTraceTextArea( aChunk );   
+            parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress(), false );
+        }
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always

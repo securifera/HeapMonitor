@@ -193,9 +193,10 @@ public:
 		this->ptr = ptr;
 		this->trace = trace;
 	};
-	DWORD getBytes(char* buf, DWORD max_size){
-		DWORD ret_size = 0;
-		DWORD buf_size = 12;
+
+	size_t getBytes(char* buf, size_t max_size){
+		size_t ret_size = 0;
+		size_t buf_size = 12;
 		
 		//Check that an address 
 		if( trace ){
@@ -206,8 +207,8 @@ public:
 				memset(buf, 0, ret_size );
 
 				//Add address and stack trace
-				*(long *)buf = (size_t)ptr;
-				*(int *)((char*)buf + 8) = trace->trace_str.length();
+				*(long *)buf = (long)ptr;
+				*(DWORD *)((char*)buf + 8) = (DWORD)trace->trace_str.length();
 				memcpy(  (char*)buf + 12, trace->trace_str.c_str(), trace->trace_str.length() );
 			} else {
 				printf("MemoryMessage: Unable to create MemoryMessage, buffer is too small.\nProvided: %d, Needed: %d\n", max_size, buf_size );
@@ -229,9 +230,9 @@ public:
 		msg_type = (byte)0x12;
 	};
 
-	DWORD getBytes(char* buf, DWORD max_size){
-		DWORD ret_size = 0;
-		DWORD buf_size = 0;
+	size_t getBytes(char* buf, DWORD max_size){
+		size_t ret_size = 0;
+		size_t buf_size = 0;
 		
 		//Get data from the base class
 		buf_size = this->MemoryMessage::getBytes(buf + 5, max_size - 5);
@@ -263,9 +264,9 @@ public:
 		msg_type = (byte)0x13;
 	};
 
-	DWORD getBytes(char* buf, DWORD max_size){
-		DWORD ret_size = 0;
-		DWORD buf_size = 0;
+	size_t getBytes(char* buf, DWORD max_size){
+		size_t ret_size = 0;
+		size_t buf_size = 0;
 		
 		//Get data from the base class
 		buf_size = this->MemoryMessage::getBytes(buf + 1, max_size - 1);

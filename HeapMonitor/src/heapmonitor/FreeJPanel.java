@@ -4,6 +4,8 @@ import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.DefaultListModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 /**
  *
@@ -33,22 +35,23 @@ public class FreeJPanel extends javax.swing.JPanel {
         DefaultListModel listModel = new DefaultListModel();
         freeJList.setModel(listModel);
         freeJList.setFont( new Font(Font.MONOSPACED, Font.PLAIN, 12 ));
-        
-        freeJList.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent evt) {
-                if (evt.getClickCount() == 1) {
-                    
-                    MemoryChunk aChunk = (MemoryChunk)freeJList.getSelectedValue();
-                    if( aChunk != null ){
-                        parentFrame.getTracePanel().setStackTraceTextArea( aChunk );   
-                        parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress(), false );
-                    }
-                                        
-                } 
-            }
+        freeJList.addListSelectionListener( new ListSelectionListener() {
 
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if( !e.getValueIsAdjusting()){
+                    loadMemoryAddr();
+                }
+            }
         });
+    }
+    
+    private void loadMemoryAddr(){
+        MemoryChunk aChunk = (MemoryChunk)freeJList.getSelectedValue();
+        if( aChunk != null ){
+            parentFrame.getTracePanel().setStackTraceTextArea( aChunk );   
+            parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress(), false );
+        }
     }
 
     /**

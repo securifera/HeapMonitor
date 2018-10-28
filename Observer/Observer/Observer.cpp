@@ -48,10 +48,10 @@ CRITICAL_SECTION cs;  // shared structure
 
 
 // Malloc hook function. Templated so we can hook many mallocs.
-template <int N>
-void * __cdecl mallocHook(size_t size){
+template <unsigned int N>
+PtrMalloc __cdecl mallocHook(DWORD size){
 	
-	void * p = originalMallocs[N](size);
+	PtrMalloc p = (PtrMalloc)originalMallocs[N](size);
 	if( profiling && shouldHook ){
 		shouldHook = false;
 	
@@ -61,7 +61,7 @@ void * __cdecl mallocHook(size_t size){
 		//Create trace and malloc message, then add to queue
 		Trace aTrace;
 		MallocMessage aMsg(size, (size_t *)p, &aTrace);
-		DWORD retBytes = 0;
+		size_t retBytes = 0;
 
 
 		EnterCriticalSection( &cs );
@@ -70,7 +70,7 @@ void * __cdecl mallocHook(size_t size){
 		if( retBytes > 0 && ClientSocket ){
 			
 			//Send the bytes 
-			int sent_count = send(ClientSocket, (const char *)ret_buf, retBytes, 0 );
+			DWORD sent_count = send(ClientSocket, (const char *)ret_buf, (int)retBytes, 0 );
 			if(pFile)
 				fprintf(pFile, "Sent message.  %d bytes, msg_size %d.\n", sent_count, retBytes);
 			
@@ -95,7 +95,7 @@ void  __cdecl freeHook(void * p){
 		
 		Trace aTrace;
 		FreeMessage aMsg( (size_t *)p, &aTrace);
-        DWORD retBytes = 0;
+        size_t retBytes = 0;
 
 		EnterCriticalSection( &cs );
 		//Get buf data
@@ -103,7 +103,7 @@ void  __cdecl freeHook(void * p){
 		if( retBytes > 0 && ClientSocket ){
 			
 			//Send the bytes 
-			send(ClientSocket, (const char *)ret_buf, retBytes, 0 );
+			send(ClientSocket, (const char *)ret_buf, (int)retBytes, 0 );
 			if(pFile)
 				fprintf(pFile, "Send message.  %d bytes\n", retBytes);
 			
@@ -115,12 +115,15 @@ void  __cdecl freeHook(void * p){
 }
 
 // Template recursion to init a hook table.
-template<int N> struct InitNHooks{
+template<unsigned int N> struct InitNHooks{
     static void initHook(){
-        InitNHooks<N-1>::initHook();  // Compile time recursion. 
 
-		mallocHooks[N-1] = &mallocHook<N-1>;
-		freeHooks[N-1] = &freeHook<N-1>;
+		if( N > 0){
+			InitNHooks<N-1>::initHook();  // Compile time recursion. 
+
+			mallocHooks[N-1] = (PtrMalloc)&mallocHook<N-1>;
+			freeHooks[N-1] = &freeHook<N-1>;
+		}
     }
 };
  

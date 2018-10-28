@@ -4,4 +4,8 @@
     <LocalDebuggerCommandArguments>-p 4164 -d "C:\Users\user\Desktop\HeapMonitor\Heapy\Debug\HeapyInject_Win32.dll"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments> -e C:\TestAllocations.exe -d C:\Observer_x64.dll</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

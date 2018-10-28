@@ -73,7 +73,7 @@ public class MainFrame extends javax.swing.JFrame {
         jLabel1.setText("IP Address:");
 
         ipAddressField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        ipAddressField.setText("192.168.229.128");
+        ipAddressField.setText("127.0.0.1");
 
         jLabel2.setText("Port:");
 

@@ -1,13 +1,9 @@
 #include <Windows.h>
-//#include <Psapi.h>
 #include <strsafe.h>
 
 #include <iostream>
 #include <stdio.h>
-//#include <conio.h>
-//#include <vector>
 #include <string>
-//#include <algorithm>
 
 #pragma comment (lib, "Advapi32.lib")
 
@@ -36,13 +32,13 @@ int LoadLibraryInjection(HANDLE proc, const char *dllName){
 	LPVOID RemoteString, LoadLibAddy;
 	LoadLibAddy = (LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
 
-	RemoteString = (LPVOID)VirtualAllocEx(proc, NULL, strlen(dllName), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+	RemoteString = (LPVOID)VirtualAllocEx(proc, NULL, strlen(dllName) + 1, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
 	if(RemoteString == NULL){
 		CloseHandle(proc); // Close the process handle.
 		throw std::runtime_error("LoadLibraryInjection: Error on VirtualAllocEx.");
 	}
 
-	if(WriteProcessMemory(proc, (LPVOID)RemoteString, dllName,strlen(dllName), NULL) == 0){
+	if(WriteProcessMemory(proc, (LPVOID)RemoteString, dllName,strlen(dllName) + 1, NULL) == 0){
 		VirtualFreeEx(proc, RemoteString, 0, MEM_RELEASE); // Free the memory we were going to use.
 		CloseHandle(proc); // Close the process handle.
 		throw std::runtime_error("LoadLibraryInjection: Error on WriteProcessMemeory.");
@@ -126,7 +122,7 @@ extern "C" int main(int argc, char* argv[]){
 	
 	if(argc < 2){
 		std::cout << "No arguments specified!\n\n";
-		std::cout << "Usage: Heapy -p pid -e <exe path> -a [args to pass to exe]\n\n"
+		std::cout << "Usage: DllInjector -p pid -e <exe path> -a [args to pass to exe]\n\n"
 					 "       -p Provide the process pid if you wish to attach to a running process\n"
 		             "       -e Path to exe to launch \n"
 					 "       -d Path to dll to inject \n"
@@ -175,7 +171,7 @@ extern "C" int main(int argc, char* argv[]){
 			break;
 		}
 	}
-
+	
 	//Make sure dll exists
 	if ( GetFileAttributesA((LPCSTR)dllPath.c_str()) == INVALID_FILE_ATTRIBUTES ){
 		std::cerr << "DLL does not exist. Please check path: (" << dllPath << ").\n\n";

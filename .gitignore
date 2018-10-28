@@ -57,3 +57,5 @@ heap_inject_dll/heap_inject_dll/Debug/heap_inject.dll.embed.manifest.res
 *.ipch
 /HeapMonitor/build/
 /HeapMonitor/dist/
+*.properties
+*.xml
