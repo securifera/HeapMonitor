@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <iomanip>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
@@ -46,6 +45,8 @@ char moduleFileName[MAX_PATH];
 
 CRITICAL_SECTION cs;  // shared structure
 
+HANDLE heapHandle;  //Handle to private heap
+
 
 // Malloc hook function. Templated so we can hook many mallocs.
 template <unsigned int N>
@@ -59,7 +60,7 @@ PtrMalloc __cdecl mallocHook(DWORD size){
 			fprintf(pFile, "Hooked malloc for size %d at address %p.\n", size, p);
 
 		//Create trace and malloc message, then add to queue
-		Trace aTrace;
+		Trace aTrace(heapHandle);
 		MallocMessage aMsg(size, (size_t *)p, &aTrace);
 		size_t retBytes = 0;
 
@@ -93,7 +94,7 @@ void  __cdecl freeHook(void * p){
 		if(pFile)
 			fprintf(pFile, "Hooked free of pointer %p\n", p);
 		
-		Trace aTrace;
+		Trace aTrace(heapHandle);
 		FreeMessage aMsg( (size_t *)p, &aTrace);
         size_t retBytes = 0;
 
@@ -301,6 +302,9 @@ void setupHeapProfiling(){
 
 	InitializeCriticalSection(&cs);
 
+	if( heapHandle == NULL)
+		heapHandle = HeapCreate (0, 0x10000, 0);
+
 	//Open log file
 	fopen_s(&pFile, "C:\\hooklog.txt","w");
 
@@ -346,11 +350,7 @@ void setupHeapProfiling(){
 	GetModuleFileNameA(hMod, moduleFileName, MAX_PATH);
 	if(pFile)
 		fprintf(pFile, "Module Filename: %s\n", moduleFileName) ;
-
-	//// Yes this leaks - cleauing it up at application exit has zero real benefit.
-	//// Might be able to clean it up on CatchExit but I don't see the point.
-	////heapProfiler = new HeapProfiler(); 
-
+	
 	//// Trawl though loaded modules and hook any mallocs and frees we find.
 	//SymEnumerateModules(GetCurrentProcess(), enumModulesCallback, NULL);
 	SymEnumerateModules64(GetCurrentProcess(), EnumerateModulesProc64Callback, NULL);

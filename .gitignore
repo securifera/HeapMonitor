@@ -59,3 +59,5 @@ heap_inject_dll/heap_inject_dll/Debug/heap_inject.dll.embed.manifest.res
 /HeapMonitor/dist/
 *.properties
 *.xml
+*.opensdf
+Observer/HeapMonitor.sdf

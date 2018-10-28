@@ -1,8 +1,6 @@
 #pragma once
-#include <ostream>
+
 #include "dbghelp.h"
-#include <sstream> 
-#include <string>
 #include <iomanip>
 
 const int backtraceSize = 64;
@@ -10,19 +8,58 @@ const int backtraceSize = 64;
 class Trace {
 
 public:	
-	Trace(){
-		//this->getTrace();
+	Trace(HANDLE passedHeapHandle){
+		heapHandle = passedHeapHandle;
+	    trace_str_buf_size = 0;
 		this->walkStack();
 	};
-	std::string trace_str;
+
+	~Trace(){
+		if( trace_str_buf != NULL && heapHandle != NULL )
+			HeapFree(heapHandle, 0 , trace_str_buf);
+
+	};
+	char *trace_str_buf;
+	DWORD trace_str_buf_size;
+	HANDLE heapHandle;
 
 private:
+
+	void appendToTrace( char *str, size_t size ){
+
+		if( heapHandle != NULL){
+			if( trace_str_buf_size == 0 ){
+
+				//Create a buffer and copy into it
+				trace_str_buf_size = 0x100000;
+				trace_str_buf = (char *)HeapAlloc(heapHandle, HEAP_ZERO_MEMORY, trace_str_buf_size);
+				strncpy_s(trace_str_buf, trace_str_buf_size, str, size );
+
+			} else if( strlen(trace_str_buf) + size > trace_str_buf_size) {
+		
+				//Add more space
+				trace_str_buf_size += 0x100000;
+				trace_str_buf = (char *)HeapReAlloc(heapHandle, HEAP_ZERO_MEMORY, trace_str_buf, trace_str_buf_size);
+				if( trace_str_buf == NULL) 
+					return;
+				//Concatenate the string
+				strncat_s(trace_str_buf, trace_str_buf_size, str, size);
+
+			} else {
+
+				//Concatenate the string
+				strncat_s(trace_str_buf, trace_str_buf_size, str, size);
+			}
+		}
+	
+	}
+
 	void walkStack(){
 		
 		CONTEXT Context = {0};
 		STACKFRAME64 stk;
 		memset(&stk, 0, sizeof(stk));
-		std::stringstream stream;
+
 		HANDLE hThread = GetCurrentThread();
 		HANDLE currProc = GetCurrentProcess();
 
@@ -53,6 +90,7 @@ private:
 
 		char tmpBuf[24];
 		char lineNum[20];
+		DWORD str_len = 0;
 		for(ULONG Frame = 0; ; Frame++)
 		{
 			BOOL result = StackWalk64(
@@ -68,14 +106,13 @@ private:
 									);
 
 			size_t curr_trace = (ULONG64)stk.AddrPC.Offset;
-			sprintf_s(tmpBuf, "%p",  (ULONG64)stk.AddrPC.Offset);
 			if( curr_trace ){
 
 				sprintf_s(tmpBuf, "%p", curr_trace);
 				// Output stack frame symbols if available.
 				if(SymGetSymFromAddr(currProc, (DWORD64)curr_trace, 0, symbol)){
 
-					stream << symbol->Name;
+					appendToTrace(symbol->Name, strlen(symbol->Name));
 
 					// Output filename + line info if available.
 					IMAGEHLP_LINE64 lineSymbol;
@@ -83,27 +120,32 @@ private:
 					DWORD displacement;
 
 					if(SymGetLineFromAddr64(currProc, (DWORD64)curr_trace, &displacement, &lineSymbol)){
-						stream << "\t" << lineSymbol.FileName; 
-						stream << ":";
+						
+						appendToTrace( "\t", 1);
+						appendToTrace( lineSymbol.FileName, strlen(lineSymbol.FileName));
+						appendToTrace( ":", 1);
 						
 						//Add line number
 						_ltoa_s(lineSymbol.LineNumber, lineNum, 10 );
-						stream << lineNum;
+						appendToTrace( lineNum, strlen(lineNum));
 
 					} else {
-						stream << "\t";
+						appendToTrace( "\t", 1);
 					}
 				
-					
-					stream << "\t(";
-					stream << tmpBuf;	
-					stream <<  ")\n";
+					appendToTrace( "\t", 1);
+
+					appendToTrace( tmpBuf, strlen(tmpBuf));
+
+					appendToTrace( ")\n", 2);
 
 				} else {
 					
-					stream << "<no symbol>\t\t(";
-					stream << tmpBuf;	
-					stream <<  ")\n";
+					appendToTrace("<no symbol>\t\t(", 14);
+
+					appendToTrace(tmpBuf, strlen(tmpBuf));
+
+					appendToTrace( ")\n", 2);
 				}
 			
 			}
@@ -112,78 +154,9 @@ private:
 				break;
 		}
 
-		//Set the stream
-		trace_str.assign( stream.str() );
 	
 	}
-	void getTrace(){
-
-		std::stringstream stream;
-		unsigned long retLong;
-		void *backtrace[backtraceSize];
-		unsigned short frames;
-		char tmpBuf[24];
-		char lineNum[20];
-
-		frames = CaptureStackBackTrace(1, backtraceSize, backtrace, &retLong);
-
-		HANDLE process = GetCurrentProcess();
-
-		const int MAXSYMBOLNAME = 128 - sizeof(IMAGEHLP_SYMBOL);
-		char symbol64_buf[sizeof(IMAGEHLP_SYMBOL) + MAXSYMBOLNAME] = {0};
-		IMAGEHLP_SYMBOL *symbol = reinterpret_cast<IMAGEHLP_SYMBOL*>(symbol64_buf);
-		symbol->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL);
-		symbol->MaxNameLength = MAXSYMBOLNAME - 1;
-		
-		// Print out stack trace. Skip the first frame (that's our hook function.)
-		for(unsigned short i = 0; i < frames; ++i){ 
-
-			size_t curr_trace = (size_t)backtrace[i];
-			if( curr_trace ){
-
-				sprintf_s(tmpBuf, "%p", curr_trace);
-				// Output stack frame symbols if available.
-				if(SymGetSymFromAddr(process, (DWORD64)curr_trace, 0, symbol)){
-
-					stream << symbol->Name;
-
-					// Output filename + line info if available.
-					IMAGEHLP_LINE64 lineSymbol;
-					lineSymbol.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-					DWORD displacement;
-
-					if(SymGetLineFromAddr64(process, (DWORD64)curr_trace, &displacement, &lineSymbol)){
-						stream << "\t" << lineSymbol.FileName; 
-						stream << ":";
-						
-						//Add line number
-						_ltoa_s(lineSymbol.LineNumber, lineNum, 10 );
-						stream << lineNum;
-
-					} else {
-						stream << "\t";
-					}
-				
-					
-					stream << "\t(";
-					stream << tmpBuf;	
-					stream <<  ")\n";
-
-				} else {
-					
-					stream << "\t<no symbol>\t(";
-					stream << tmpBuf;	
-					stream <<  ")\n";
-				}
-
-			} else{
-				break;
-			}
-		}
-
-		//Set the stream
-		trace_str.assign( stream.str() );
-	}
+	
 };
 
 //******************************************************************************
@@ -201,15 +174,16 @@ public:
 		//Check that an address 
 		if( trace ){
 
-			buf_size += trace->trace_str.length();	
+			DWORD trace_len = (DWORD)strlen(trace->trace_str_buf);
+			buf_size += trace_len;	
 			if( buf && buf_size <= max_size ){
 				ret_size = buf_size;
 				memset(buf, 0, ret_size );
 
 				//Add address and stack trace
 				*(long *)buf = (long)ptr;
-				*(DWORD *)((char*)buf + 8) = (DWORD)trace->trace_str.length();
-				memcpy(  (char*)buf + 12, trace->trace_str.c_str(), trace->trace_str.length() );
+				*(DWORD *)((char*)buf + 8) = (DWORD)trace_len;
+				memcpy(  (char*)buf + 12, trace->trace_str_buf, trace_len );
 			} else {
 				printf("MemoryMessage: Unable to create MemoryMessage, buffer is too small.\nProvided: %d, Needed: %d\n", max_size, buf_size );
 			}
