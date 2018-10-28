@@ -52,8 +52,9 @@ public class MemoryTupleHandler extends ManagedRunnable {
                 //Handles a message if there is one
                 if(anObjArr != null){
                     handleIncoming(anObjArr);
+                    anObjArr = null;
                 }
-
+                
             }
         }
     }
@@ -65,7 +66,7 @@ public class MemoryTupleHandler extends ManagedRunnable {
      * @param theMessage
      * @return 
     */
-    private void handleIncoming( final Object[] anObjArr ) {  
+    private void handleIncoming( Object[] anObjArr ) {  
         
         //String aStr = null;
         if( anObjArr != null && anObjArr.length == 2){

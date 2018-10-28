@@ -8,6 +8,7 @@ package heapmonitor;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -220,17 +221,24 @@ public class MainFrame extends javax.swing.JFrame {
             theAddressStr = theAddressStr.replace("0x", "");
         }
         
-        int theAddr;
+        long theAddr = 0;
         try {
-            theAddr = Integer.parseInt(theAddressStr, radix);
+            theAddr = Long.parseLong(theAddressStr, radix);
             theMemoryJPanel.loadMemoryPage(theAddr, false);
         } catch( NumberFormatException ex ){
             try {
                 radix = 16;
-                theAddr = Integer.parseInt(theAddressStr, radix);
+                theAddr = Long.parseLong(theAddressStr, radix);
                 theMemoryJPanel.loadMemoryPage(theAddr, false);
             } catch( NumberFormatException ex1 ){
             }
+        }
+        
+        //Get the allocation for this address
+        Map.Entry< Long, MemoryChunk> curEntry = theMemoryJPanel.getAllocation( MemoryJPanel.LOWER_EQUAL_ADDRESS, theAddr);
+        if( curEntry != null ){
+            MemoryChunk aChunk = curEntry.getValue();
+            setSelectedChunk(aChunk);
         }
     }//GEN-LAST:event_goButtonActionPerformed
 
@@ -302,7 +310,7 @@ public class MainFrame extends javax.swing.JFrame {
                 Executor.execute(theSocketHandler);
                 
             } catch (IOException ex) {
-                Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, "Unable to connect.", ex);
             }
         }
     }
@@ -367,6 +375,15 @@ public class MainFrame extends javax.swing.JFrame {
         }
 
         return retVal;
+    }
+    
+    //======================================================================
+    /**
+     * Set the selected chunk in the allocation list
+     * @param passedChunk 
+     */
+    public void setSelectedChunk( MemoryChunk passedChunk ){
+        theAllocationJPanel.setSelected(passedChunk);
     }
    
     //=======================================================================

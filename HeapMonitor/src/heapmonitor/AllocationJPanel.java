@@ -2,8 +2,6 @@
 package heapmonitor;
 
 import java.awt.Font;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import javax.swing.DefaultListModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -93,6 +91,15 @@ public class AllocationJPanel extends javax.swing.JPanel {
     private javax.swing.JScrollPane allocationScrollPane;
     // End of variables declaration//GEN-END:variables
 
+    //=======================================================================
+    /**
+     * 
+     * @param aChunk 
+     */
+    public void setSelected(MemoryChunk aChunk) {
+        allocationJList.setSelectedValue(aChunk, true);
+    }
+    
     //=======================================================================
     /**
      * 
