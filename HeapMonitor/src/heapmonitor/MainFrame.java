@@ -9,19 +9,22 @@ package heapmonitor;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JColorChooser;
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
+import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 /**
  *
@@ -41,6 +44,8 @@ public class MainFrame extends javax.swing.JFrame implements ActionListener {
         
     public final static String COLORIZE_ALLOC = "Colorize_Alloc";
     public final static String COLORIZE_FREE = "Colorize_Free";
+    
+    public String all_memory_traces = "";
     
     
     /**
@@ -255,10 +260,15 @@ public class MainFrame extends javax.swing.JFrame implements ActionListener {
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectButtonActionPerformed
         
-        String ipStr = ipAddressField.getText();
-        String portStr = portField.getText();
-        
-        connect(ipStr, portStr);
+        String connStr = connectButton.getText();
+        if( connStr.equals("Connect") ){
+            
+            String ipStr = ipAddressField.getText();
+            String portStr = portField.getText();
+            connect(ipStr, portStr);
+        } else {
+            theSocketHandler.disconnect();
+        }
     }//GEN-LAST:event_connectButtonActionPerformed
 
     private void goButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_goButtonActionPerformed
@@ -389,8 +399,21 @@ public class MainFrame extends javax.swing.JFrame implements ActionListener {
         
         //Add tabs to tabbed pane
         mainTabPane.addTab("Memory", theMemoryJPanel);
-        mainTabPane.addTab("Call Trace", theTraceJPanel);
-        mainTabPane.setSelectedIndex(0);        
+        mainTabPane.addTab("Trace", theTraceJPanel);
+        mainTabPane.setSelectedIndex(0); 
+        
+        mainTabPane.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent evt) {
+                JTabbedPane pane = (JTabbedPane) evt.getSource();
+                int sel = pane.getSelectedIndex();
+                if(sel == 1){
+                    if( theAllocationJPanel.getSelected() == null && theFreeJPanel.getSelected() == null )
+                        theTraceJPanel.setStackTraceTextArea(all_memory_traces);
+                }
+                
+            }
+        });
         
         //Create the allocation panels
         theAllocationJPanel = new AllocationJPanel( this );  
@@ -406,6 +429,22 @@ public class MainFrame extends javax.swing.JFrame implements ActionListener {
         
         theAllocationJPanel.setAutoscrollFlag(AUTOSCROLL_FLAG);
         theFreeJPanel.setAutoscrollFlag(AUTOSCROLL_FLAG);
+        
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e){
+                theAllocationJPanel.setSelected(null);
+                theFreeJPanel.setSelected(null);
+            }
+        });
+        
+        mainTabPane.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e){
+                theAllocationJPanel.setSelected(null);
+                theFreeJPanel.setSelected(null);
+            }
+        });
                  
     }
 
@@ -446,6 +485,27 @@ public class MainFrame extends javax.swing.JFrame implements ActionListener {
      * @param passedTrace 
      */
     public void addTrace(long passedAddress, Trace passedTrace) {
+        
+        SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy-hh:mm:ss:SSSZ ");
+        String retStr = format.format( passedTrace.dateReceived );
+            
+        retStr += " " + "0x" + Long.toHexString(passedAddress);
+        //Add size
+        if( passedTrace instanceof AllocationTrace ){
+            AllocationTrace allocTrace = (AllocationTrace)passedTrace;
+            retStr += "\nMALLOC Size: " + allocTrace.getSize();
+        } else {
+            retStr += "\nFREE";
+        }
+
+        retStr += "\n";
+        retStr += Trace.processStackTrace( passedTrace.traceByteArr );
+        retStr += "\n";
+        
+        //Add trace
+        all_memory_traces += retStr;
+        if( theAllocationJPanel.getSelected() == null && theFreeJPanel.getSelected() == null )
+            theTraceJPanel.setStackTraceTextArea(all_memory_traces);
                        
         //Get the memory chunk if it exists
         MemoryChunk aChunk = theMemoryJPanel.getMemoryChunk( passedAddress );
@@ -491,8 +551,7 @@ public class MainFrame extends javax.swing.JFrame implements ActionListener {
         }     
         
         //Update the chunk
-        theMemoryJPanel.setMemoryChunk(passedAddress, aChunk);
-                
+        theMemoryJPanel.setMemoryChunk(passedAddress, aChunk);                
         refreshComponents(passedAddress);
     }
     

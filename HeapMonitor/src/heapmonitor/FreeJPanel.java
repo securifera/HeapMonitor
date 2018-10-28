@@ -113,7 +113,7 @@ public class FreeJPanel extends javax.swing.JPanel {
     private void loadMemoryAddr(){
         MemoryChunk aChunk = (MemoryChunk)freeJList.getSelectedValue();
         if( aChunk != null ){
-            parentFrame.getTracePanel().setStackTraceTextArea( aChunk );   
+            parentFrame.getTracePanel().setStackTraceTextArea( aChunk.getTraceHistory() );   
             parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress(), false );
         }
     }
@@ -203,5 +203,17 @@ public class FreeJPanel extends javax.swing.JPanel {
      */
     public void setAutoscrollFlag(boolean selected) {
         autoScroll = selected;
+    }
+
+    //=========================================================================
+    /**
+     * 
+     * @param object 
+     */
+    public void setSelected(Object object) {
+        if( object == null)
+            freeJList.clearSelection();
+        else
+            freeJList.setSelectedValue(object, true);
     }
 }

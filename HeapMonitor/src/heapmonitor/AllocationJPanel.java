@@ -104,7 +104,7 @@ public class AllocationJPanel extends javax.swing.JPanel {
     private void loadMemoryAddr(){
         MemoryChunk aChunk = (MemoryChunk)allocationJList.getSelectedValue();
         if( aChunk != null ){
-            parentFrame.getTracePanel().setStackTraceTextArea( aChunk );   
+            parentFrame.getTracePanel().setStackTraceTextArea( aChunk.getTraceHistory() );   
             parentFrame.getMemoryPanel().loadMemoryPage( aChunk.getAddress(), false );
         }
     }
@@ -164,7 +164,10 @@ public class AllocationJPanel extends javax.swing.JPanel {
      * @param aChunk 
      */
     public void setSelected(MemoryChunk aChunk) {
-        allocationJList.setSelectedValue(aChunk, true);
+        if( aChunk == null )
+            allocationJList.clearSelection();
+        else    
+            allocationJList.setSelectedValue(aChunk, true);
     }
     
     

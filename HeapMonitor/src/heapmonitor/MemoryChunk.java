@@ -149,7 +149,9 @@ public class MemoryChunk {
             //Add size
             if( aTrace instanceof AllocationTrace ){
                 AllocationTrace allocTrace = (AllocationTrace)aTrace;
-                retStr += " Size: " + allocTrace.getSize();
+                retStr += "\nMALLOC Size: " + allocTrace.getSize();
+            } else {
+                retStr += "\nFREE";
             }
             
             retStr += "\n";

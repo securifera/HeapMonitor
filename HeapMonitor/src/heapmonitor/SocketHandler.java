@@ -96,10 +96,9 @@ public class SocketHandler implements Runnable {
                             
                             //Create tuple
                             aTrace = new AllocationTrace( traceByteArr, size);
-
                             break;
+                            
                         case FREE:
-
                             //Get address
                             dataStream.readFully(addrArr);
                             address = ByteBuffer.wrap(addrArr).order(ByteOrder.LITTLE_ENDIAN).getLong();
@@ -142,6 +141,17 @@ public class SocketHandler implements Runnable {
         //Set socket handler to null
         theParentFrame.setSocketHandler(null);
         
+    }
+
+    //==========================================================================
+    /**
+     * 
+     */
+    public void disconnect() {
+        try {
+            theClientSocket.close();
+        } catch (IOException ex) {
+        }
     }
     
 }

@@ -26,21 +26,18 @@ public class TraceJPanel extends javax.swing.JPanel {
      */
     private void initializeComponents() {
         //Set text area font
-        traceJTextArea.setFont( new Font(Font.MONOSPACED, Font.PLAIN, 11 ));        
+        traceJTextArea.setFont( new Font(Font.MONOSPACED, Font.PLAIN, 11 )); 
     }
     
     //======================================================================
     /**
      * 
-     * @param passedTrace 
+     * @param retStr
      */
-    public void setStackTraceTextArea( MemoryChunk passedTrace ) {
+    public void setStackTraceTextArea( String retStr ) {
         
-        passedTrace.getTraceHistory();
-        String retStr = passedTrace.getTraceHistory();
         traceJTextArea.setText( retStr );
-        traceJTextArea.setCaretPosition(0);
-        
+        //traceJTextArea.setCaretPosition(0);        
     }
 
     /**
