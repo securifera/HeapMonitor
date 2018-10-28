@@ -6,6 +6,10 @@
 
 package heapmonitor;
 
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Map;
@@ -13,6 +17,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JColorChooser;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
@@ -20,7 +27,7 @@ import javax.swing.UIManager;
  *
  * @author b0yd
  */
-public class MainFrame extends javax.swing.JFrame {
+public class MainFrame extends javax.swing.JFrame implements ActionListener {
    
     private SocketHandler theSocketHandler = null;
     public static ExecutorService Executor;
@@ -31,6 +38,10 @@ public class MainFrame extends javax.swing.JFrame {
     
     public static int ALLOCATION_HEADER_SIZE = 8;
     public static boolean AUTOSCROLL_FLAG = true;
+        
+    public final static String COLORIZE_ALLOC = "Colorize_Alloc";
+    public final static String COLORIZE_FREE = "Colorize_Free";
+    
     
     /**
      * Creates new form MainFrame
@@ -38,6 +49,43 @@ public class MainFrame extends javax.swing.JFrame {
     public MainFrame() {
         initComponents();
         initializeComponents();                  
+    }
+    
+       
+     //========================================================================
+    /**
+     *  Handles the various actions
+     * @param evt
+    */
+    @Override
+    public void actionPerformed(ActionEvent evt) {
+        
+        String actionCommand = evt.getActionCommand();
+        switch (actionCommand) {
+            case COLORIZE_ALLOC:
+                MemoryChunk aChunk = (MemoryChunk)theAllocationJPanel.getSelected();
+                if( aChunk != null ){
+                    Color memColor = JColorChooser.showDialog(this, "Color Picker", aChunk.getColor());
+                    if( memColor != null){
+                        aChunk.setColor(memColor);
+                        refreshComponents(aChunk.getAddress());
+                    }
+                }
+                break;
+            case COLORIZE_FREE:
+                aChunk = (MemoryChunk)theFreeJPanel.getSelected();
+                if( aChunk != null ){
+                    Color memColor = JColorChooser.showDialog(this, "Color Picker", aChunk.getColor());
+                    if( memColor != null){
+                        aChunk.setColor(memColor);
+                        refreshComponents(aChunk.getAddress());
+                    }
+                }
+                break;
+            default:
+                break;           
+        }       
+        
     }
 
     /**
@@ -309,12 +357,14 @@ public class MainFrame extends javax.swing.JFrame {
                 theSocketHandler = new SocketHandler(this, clientSocket);
                 Executor.execute(theSocketHandler);
                 
+                connectButton.setText("Disconnect");
+                
             } catch (IOException ex) {
                 Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, "Unable to connect.", ex);
             }
         }
     }
-
+    
     //=======================================================================
     /**
      *
@@ -322,6 +372,9 @@ public class MainFrame extends javax.swing.JFrame {
      */
     public void setSocketHandler(SocketHandler passedHandler) {
         theSocketHandler = passedHandler;
+        if( theSocketHandler == null){
+            connectButton.setText("Connect");
+        }
     }
 
     //=======================================================================

@@ -1,6 +1,7 @@
 
 package heapmonitor;
 
+import java.awt.Color;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,6 +17,7 @@ public class MemoryChunk {
     protected final long memoryAddress;
     protected final Stack<AllocationTrace> allocationList = new Stack<>();
     protected final Stack<Trace> freeList = new Stack<>();
+    private Color memoryColor = Color.BLUE;
     
     private boolean allocated = false;
     
@@ -158,5 +160,23 @@ public class MemoryChunk {
         
         return retStr;
         
+    }
+    
+    //========================================================================
+    /**
+     * 
+     * @param passedColor 
+     */
+    public void setColor( Color passedColor ){
+        memoryColor = passedColor;
+    }
+
+    //=========================================================================
+    /**
+     * 
+     * @return 
+     */
+    public Color getColor() {
+        return memoryColor;
     }
 }

@@ -1,9 +1,16 @@
 package heapmonitor;
 
+import static heapmonitor.MainFrame.COLORIZE_ALLOC;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
+import javax.swing.JList;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -44,6 +51,63 @@ public class FreeJPanel extends javax.swing.JPanel {
                 }
             }
         });
+        
+        freeJList.addMouseListener( new MouseAdapter(){
+            @Override
+            public void mouseReleased(MouseEvent e){
+                if(e.isPopupTrigger()){
+                    doTreePopupMenuLogic(e);
+                } 
+            }
+        });
+        
+        freeJList.setCellRenderer( new DefaultListCellRenderer(){
+            @Override
+            public Component getListCellRendererComponent( JList list, Object value, int index, boolean isSelected, boolean cellHasFocus ) {  
+                Component c = super.getListCellRendererComponent( list, value, index, isSelected, cellHasFocus );  
+                if( value instanceof MemoryChunk ){
+                    MemoryChunk mem = (MemoryChunk)value;
+                    Color val_c = mem.getColor();
+                    if( val_c != Color.BLUE ) {  
+                        c.setBackground( val_c );  //yellow every even row
+                    } 
+                }
+                return c;  
+            }  
+        });
+    }
+   
+    
+    //=======================================================================
+    /**
+    *  Determines what menu options to show on the popup menu based on the
+    *  {@link XmlObject} object contained in the currently selected node.
+    *
+    *  @param  e   the {@code MouseEvent} that triggered the popup
+    */
+    public void doTreePopupMenuLogic( MouseEvent e ) {       
+        
+       JPopupMenu popup = new JPopupMenu();
+       JMenuItem menuItem;
+       
+       menuItem = new JMenuItem( "Colorize");
+       menuItem.setActionCommand( MainFrame.COLORIZE_FREE );
+       menuItem.addActionListener(parentFrame);
+       menuItem.setEnabled( true );
+       popup.add(menuItem);
+
+       if( popup.getComponentCount() > 0 )
+          popup.show(e.getComponent(), e.getX(), e.getY());
+       
+    }
+    
+    //=======================================================================
+    /**
+     * 
+     * @return 
+     */
+    public MemoryChunk getSelected() {
+        return (MemoryChunk)freeJList.getSelectedValue();
     }
     
     private void loadMemoryAddr(){

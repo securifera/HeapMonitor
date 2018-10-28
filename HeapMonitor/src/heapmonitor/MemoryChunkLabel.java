@@ -79,10 +79,12 @@ public class MemoryChunkLabel extends JLabel {
             
             //Get previous allocation and see if it overflowed into our chunk
             int overlap = 0;
+            Color prevColor = Color.BLUE;
             Entry< Long, MemoryChunk> lowerEntry = parentPanel.getAllocation( MemoryJPanel.LOWER_ADDRESS, startAddr);
             if( lowerEntry != null ){
                 
                 MemoryChunk prevChunk = lowerEntry.getValue();
+                prevColor = prevChunk.getColor();
                 int prevSize = prevChunk.getAllocatedSize();
                 
                 //Calculate overflow
@@ -102,7 +104,7 @@ public class MemoryChunkLabel extends JLabel {
                 tempStartAddr += overlap;
 
                 //Fill in the overflow
-                g.setColor(Color.BLUE);
+                g.setColor(prevColor);
                 g.fillRect(0, 0, fillSize, 20);
 
                 if( overlap == endAddr - startAddr)
@@ -162,14 +164,14 @@ public class MemoryChunkLabel extends JLabel {
                     if( tempStartAddr + size >  endAddr){
 
                         //Fill in the rect                    
-                        g.setColor(Color.BLUE);
+                        g.setColor(aMemChunk.getColor());
                         g.fillRect(startX.intValue(), 0, BYTE_PIXEL_SIZE * (int)(endAddr - tempStartAddr), 20);                    
                         return;
                     } 
 
                     //Fill in the rect
                     int fillSize = BYTE_PIXEL_SIZE * size;                
-                    g.setColor(Color.BLUE);
+                    g.setColor(aMemChunk.getColor());
                     g.fillRect(startX.intValue(), 0, fillSize, 20);
                 }
                 
@@ -208,13 +210,13 @@ public class MemoryChunkLabel extends JLabel {
                     if( nextAddr + size >  endAddr){
 
                         //Fill in the rect                    
-                        g.setColor(Color.BLUE);
+                        g.setColor(aMemChunk.getColor());
                         g.fillRect(startX.intValue(), 0, BYTE_PIXEL_SIZE * (int)(endAddr - nextAddr), 20);                    
                         return;
                     }                 
 
                     //Fill in the rect                
-                    g.setColor(Color.BLUE);
+                    g.setColor(aMemChunk.getColor());
                     g.fillRect(startX.intValue(), 0, BYTE_PIXEL_SIZE * size, 20);               
                 }
                 

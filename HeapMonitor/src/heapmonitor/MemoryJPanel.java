@@ -186,7 +186,6 @@ public final class MemoryJPanel extends javax.swing.JPanel {
                         long startAddr = baseaddr;
                         for( int i=0; i< 0x200; i++){
                             theModel.addRow(new Object[]{ startAddr, new MemoryChunkLabel( thisPanel, memoryTreeMap, startAddr, startAddr + MAX_ROW_LENGTH)  });
-                            
                             startAddr += 0x80;
                         }
                     }
@@ -469,7 +468,7 @@ public final class MemoryJPanel extends javax.swing.JPanel {
      * 
      */
     public void clearPanel() {
-        
+                
         memoryTreeMap.clear();  
         
         memoryMapLabel.clear();
@@ -477,6 +476,8 @@ public final class MemoryJPanel extends javax.swing.JPanel {
         //Clear tree model
         DefaultTableModel theModel = (DefaultTableModel)memTable.getModel();
         theModel.setRowCount(0); 
+        
+        refreshMemoryMap();
     }
     
     //=====================================================================
