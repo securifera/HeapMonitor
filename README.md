@@ -22,7 +22,3 @@ into the target process. Once the DLL has been injected, it waits for a connecti
 
 The Observer application uses the MinHook library (https://github.com/TsudaKageyu/minhook) for function hooking
 and built upon Luke Dodd's Heapy tool (https://github.com/lukedodd/Heapy).
-
-
-
-The tool has currently only been tested on 32bit applications but has support through MinHook for 64bit.
