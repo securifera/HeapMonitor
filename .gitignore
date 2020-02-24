@@ -61,3 +61,9 @@ heap_inject_dll/heap_inject_dll/Debug/heap_inject.dll.embed.manifest.res
 *.xml
 *.opensdf
 Observer/HeapMonitor.sdf
+Observer/dist/
+Observer/Observer/build/
+Observer/DllInjector/build/
+Observer/TestAllocations/build/
+Observer/libs/
+Observer/.vs/
